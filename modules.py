@@ -156,6 +156,7 @@ def list_gcs_blobs(bucket_name = 'your_bucket_name'):
     blobs = storage_client.list_blobs(bucket_name)
     for blob in blobs:
         print(blob.name)
+    return blobs
 
 
 #########################################
