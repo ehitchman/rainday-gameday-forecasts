@@ -145,4 +145,6 @@ def union_and_write_gcs_blob_forecasts_to_gcs(request=None, is_testing_run=False
 
 if __name__ == '__main__':
     main()
+    union_and_write_gcs_blob_forecasts_to_gcs()
+
 #%%
