@@ -150,13 +150,14 @@ def writeDfToCsv(df,
 
 ########################################
 # list all files/directories/blobs
-def list_gcs_blobs(bucket_name = 'your_bucket_name'):
+def list_gcs_blobs(bucket_name = 'rainday-gameday-bucket'):
     from google.cloud import storage
     storage_client = storage.Client()
     blobs = storage_client.list_blobs(bucket_name)
-    for blob in blobs:
+    blobs_list = list(blobs)
+    for blob in blobs_list:
         print(blob.name)
-    return blobs
+    return blobs_list
 
 #######################################
 # Union blobs 

@@ -1,0 +1,8 @@
+###Execute in gcloud shell after gcloud init
+# - Source should poitn to a directory, not a file name (necessarily)
+# - Entry poiunt is the function in question (usually main()?)
+#--stage-bucket=rainday-gameday
+#--env-vars-file=./config.yaml <-- not currently in use (cloud functions don't liek a nested yaml file)
+#
+#
+gcloud functions deploy rainday-gameday-unionandwritetobq --runtime=python311 --service-account=eh-rainday-gameday@appspot.gserviceaccount.com --region=us-east1 --source=./ --entry-point=union_and_write_to_gcs --trigger-http --no-allow-unauthenticated
