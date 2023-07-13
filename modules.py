@@ -339,10 +339,11 @@ def transformJsonForecast_table(json_user_forecast,
     from datetime import date, datetime
     import pandas as pd
     
-    forecast_schema = ['forecast_dateunix', 'forecast_datestring', 'name', 
+    forecast_schema = ['forecast_capture_date', 'forecast_dateunix', 'forecast_datestring', 'name', 
                         'rain_category', 'rain_category_value', 'temp', 
                         'temp_min', 'temp_max', 'temp_humidity', 
                         'weather class', 'weather description' ]
+    forecast_capture_date = []
     forecast_weather_username = []
     forecast_datestrings = []
     forecast_datesunix = []
@@ -363,6 +364,7 @@ def transformJsonForecast_table(json_user_forecast,
     for i, singleuserssingleforecast in enumerate(json_user_forecast_list):
         
         #get date fields
+        forecast_capture_date.append(datetime.today().strftime('%Y-%m-%d'))
         forecast_dateunix = json_user_forecast_list[i]['dt']
         forecast_datestring = datetime.utcfromtimestamp(forecast_dateunix).strftime('%Y-%m-%d %H:%M:%S')
         forecast_datestrings.append(forecast_datestring)
@@ -392,7 +394,8 @@ def transformJsonForecast_table(json_user_forecast,
     # Add columns/arrays/series' to df.  TODO this will eventually be looped over 
     # each of the usernames contained in the yaml config file
     #https://stackoverflow.com/questions/30522724/take-multiple-lists-into-dataframe
-    zipped_lists = zip(forecast_datesunix, 
+    zipped_lists = zip(forecast_capture_date,
+                       forecast_datesunix, 
                        forecast_datestrings, 
                        forecast_weather_username, 
                        forecast_wthr_categories, 
