@@ -95,6 +95,54 @@ def main(request=None, is_testing_run=False):
      
     return(f"The list of forecasts has been saved to GCS bucket: {bucket_name} in location: {gcs_file_path}")
 
+
+@functions_framework.http
+def union_and_write_gcs_blob_forecasts_to_gcs(request=None, is_testing_run=False):
+    """
+    A Cloud Function that unions multiple CSV files from a Google Cloud Storage (GCS) bucket
+    and writes the combined result to another GCS blob.
+
+    Args:
+        request (flask.Request, optional): The HTTP request object. Defaults to None.
+        is_testing_run (bool, optional): Specifies if the function is being run in a testing environment.
+            Defaults to False.
+
+    Returns:
+        str: A message indicating the successful completion of the function.
+
+    Raises:
+        N/A
+
+    """
+
+    # Import necessary libraries and modules
+    import pandas as pd
+    from modules import load_yaml, list_gcs_blobs, union_gcs_csv_blobs, write_df_to_gcs
+    import os
+
+    # Load the YAML configuration data
+    yaml_data = load_yaml()
+
+    # Define the GCS bucket and file information
+    bucket_name = 'rainday-gameday-bucket'
+    gcs_file_name = 'all_historic_forecasts.csv'
+    gcs_forecasthistory_bucket_directory = yaml_data['5dayforecast_historic_forecast_csvdir']
+    gcs_forecasthistory_filepath = os.path.join(gcs_forecasthistory_bucket_directory, gcs_file_name).replace('\\', '/')
+    csvs_to_union_folder_location = yaml_data['5dayforecast_csvdir']
+
+    # Get all CSV files from the bucket and union them together
+    blobs_list = list_gcs_blobs(bucket_name=bucket_name)
+    unioned_forecasts = union_gcs_csv_blobs(blobs_list=blobs_list,
+                                            csvs_to_union_folder_location=csvs_to_union_folder_location)
+
+    # Write the unioned forecasts to GCS
+    write_df_to_gcs(df=unioned_forecasts,
+                    bucket_name=bucket_name,
+                    gcs_bucket_filepath=gcs_forecasthistory_filepath,
+                    is_testing_run=False)
+
+    return f"The combined/unioned forecasts have been saved to GCS bucket: {bucket_name} in location: {gcs_forecasthistory_filepath}"
+
 if __name__ == '__main__':
     main()
 #%%
