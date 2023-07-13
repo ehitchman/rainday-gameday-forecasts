@@ -161,18 +161,33 @@ def list_gcs_blobs(bucket_name = 'rainday-gameday-bucket'):
 
 #######################################
 # Union blobs 
-def union_files(blobs):
+def union_gcs_csv_blobs(blobs_list=None, 
+                        csvs_to_union_folder_location=''):
+
     import pandas as pd
+    from google.cloud import storage
+    import io
     dfs = []
-    for blob in blobs:
-        # Download blob as a pandas DataFrame
-        df = pd.read_csv(blob.download_as_text())
-        dfs.append(df)
+    csv_content = io.StringIO()
+
+    for blob in blobs_list:
+        if blob.name.startswith(csvs_to_union_folder_location) and blob.name.endswith('.csv') and not blob.name.endswith('/'):
+            print(blob.name)
+            # Download blob as a pandas DataFrame
+            print(type(blob.download_as_text()))
+            
+            #write blob string content to StringIO object 
+            csv_content.write(blob.download_as_text())
+            csv_content.seek(0)
+
+            #Get it into a df
+            df = pd.read_csv(csv_content)
+            dfs.append(df)
 
     # Union all DataFrames
-    union_df = pd.concat(dfs)
+    unioned_dfs = pd.concat(dfs)
 
-    return union_df
+    return unioned_dfs
 
 
 #########################################
