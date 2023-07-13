@@ -158,6 +158,21 @@ def list_gcs_blobs(bucket_name = 'your_bucket_name'):
         print(blob.name)
     return blobs
 
+#######################################
+# Union blobs 
+def union_files(blobs):
+    import pandas as pd
+    dfs = []
+    for blob in blobs:
+        # Download blob as a pandas DataFrame
+        df = pd.read_csv(blob.download_as_text())
+        dfs.append(df)
+
+    # Union all DataFrames
+    union_df = pd.concat(dfs)
+
+    return union_df
+
 
 #########################################
 #Function to get the forecast from openweatherAPI
