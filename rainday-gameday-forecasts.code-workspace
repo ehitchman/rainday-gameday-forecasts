@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../eh-resources/eh-resources"
 		}
 	],
 	"settings": {}
