@@ -34,6 +34,33 @@ def load_environment(yaml_data):
     print("Environment file loaded: ",load_dotenv(envfile_path_string))
 
 
+########################################
+#write dataframe to file
+def writeDfToCsv(df,
+                 filename=f'file.xlsx',
+                 folderpath='',
+                 is_testing_run=False):
+    import os
+    
+    #testing
+    if is_testing_run == True:
+        import pandas as pd
+        df = pd.DataFrame(data=[{1,2,3},{4,5,6}],columns=['a','b','c'])
+    else: next       
+    
+    #final file path
+    path_and_file = os.path.join(os.getcwd(),folderpath, filename)
+
+    #readout for user
+    print(f"Response (type: {type(df)} saved to {folderpath}'/'{filename}.")
+    
+    #create/overwrite df to file
+    with open(path_and_file,"w") as file:
+        df.to_csv(path_and_file, sep=',', encoding='utf-8', index=False)
+        file.close
+    #EOF
+
+
 ##########################################
 #Writes dataframe to specified bucket/path
 def write_df_to_gcs(df, 
@@ -122,42 +149,21 @@ def upload_config_to_gcs_xlsx(bucket_name='your_bucket_name',
 
 
 ########################################
-#write dataframe to file
-def writeDfToCsv(df,
-                 filename=f'file.xlsx',
-                 folderpath='',
-                 is_testing_run=False):
-    import os
-    
-    #testing
-    if is_testing_run == True:
-        import pandas as pd
-        df = pd.DataFrame(data=[{1,2,3},{4,5,6}],columns=['a','b','c'])
-    else: next       
-    
-    #final file path
-    path_and_file = os.path.join(os.getcwd(),folderpath, filename)
-
-    #readout for user
-    print(f"Response (type: {type(df)} saved to {folderpath}'/'{filename}.")
-    
-    #create/overwrite df to file
-    with open(path_and_file,"w") as file:
-        df.to_csv(path_and_file, sep=',', encoding='utf-8', index=False)
-        file.close
-    #EOF
-
-
-########################################
 # list all files/directories/blobs
 def list_gcs_blobs(bucket_name = 'rainday-gameday-bucket'):
+    
     from google.cloud import storage
+    
     storage_client = storage.Client()
     blobs = storage_client.list_blobs(bucket_name)
     blobs_list = list(blobs)
-    for blob in blobs_list:
-        print(blob.name)
+    
+    #List blobs in bucket
+    # for blob in blobs_list:
+    #     print(blob.name)
+    
     return blobs_list
+
 
 #######################################
 # Union blobs 

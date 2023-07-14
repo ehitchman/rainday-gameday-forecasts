@@ -91,9 +91,9 @@ def main(request=None, is_testing_run=False):
                     is_testing_run=False)
 
     #list GCS blobs
-    list_gcs_blobs(bucket_name=bucket_name)
+    #list_gcs_blobs(bucket_name=bucket_name)
      
-    return(f"The list of forecasts has been saved to GCS bucket: {bucket_name} in location: {gcs_file_path}")
+    return(f"FINISHED: The list of forecasts has been saved to GCS bucket: {bucket_name} in location: {gcs_file_path}")
 
 
 @functions_framework.http
@@ -141,7 +141,7 @@ def union_and_write_gcs_blob_forecasts_to_gcs(request=None, is_testing_run=False
                     gcs_bucket_filepath=gcs_forecasthistory_filepath,
                     is_testing_run=False)
 
-    return f"The combined/unioned forecasts have been saved to GCS bucket: {bucket_name} in location: {gcs_forecasthistory_filepath}"
+    return print(f"FINISHED: The combined/unioned forecasts have been saved to GCS bucket: {bucket_name} in location: {gcs_forecasthistory_filepath}")
 
 if __name__ == '__main__':
     main()
