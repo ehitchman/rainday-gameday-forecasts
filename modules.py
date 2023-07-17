@@ -104,6 +104,95 @@ def write_df_to_gcs(df,
 
 
 ########################################
+#Creates big query table from GCS blob
+def create_bq_table_from_gcs(project_name = 'your-project-name', 
+                          bucket_name = 'your-bucket-name' ,
+                          dataset_name = 'rainday-gameday-models', 
+                          table_name = 'your_new_table_name',
+                          file_path = 'file_location_for_new_table'):
+    """
+    Creates a BigQuery table from a CSV file in Google Cloud Storage (GCS) if the table does not already exist.
+
+    Args:
+        project_name (str): The ID of the Google Cloud project.
+        dataset_name (str): The ID of the BigQuery dataset within the project.
+        table_name (str): The name of the BigQuery table to be created within the dataset.
+        bucket_name (str): The name of the GCS bucket where the CSV file is stored.
+        file_path (str): The path to the CSV file in the GCS bucket.
+
+    Example:
+        create_table_from_gcs('your-project', 'your-dataset', 'your-table', 'rainday-gameday-bucket', 'forecast_history_csv/all_historic_forecasts.csv')
+
+    More info:
+    - BigQuery Python Client Library: https://cloud.google.com/bigquery/docs/reference/libraries#client-libraries-usage-python
+    - Google Cloud Storage: https://cloud.google.com/storage
+    """
+
+    #TESTING
+    project_name = 'eh-rainday-gameday'   
+    bucket_name = 'rainday-gameday-bucket'
+    dataset_name = 'forecast_models' 
+    table_name = 'forecast_history_all_users'
+    file_path = 'forecast_history_csv/all_historic_forecasts.csv'
+
+    #imports
+    from google.cloud import bigquery
+    from google.cloud.exceptions import NotFound
+
+    schema = [
+        bigquery.SchemaField("forecast_capture_date", "STRING"),
+        bigquery.SchemaField("forecast_dateunix", "FLOAT"),
+        bigquery.SchemaField("forecast_datestring", "STRING"),
+        bigquery.SchemaField("name", "STRING"),
+        bigquery.SchemaField("rain_category", "STRING"),
+        bigquery.SchemaField("rain_category_value", "INTEGER"),
+        bigquery.SchemaField("temp", "FLOAT64"),
+        bigquery.SchemaField("temp_min", "FLOAT64"),
+        bigquery.SchemaField("temp_max", "FLOAT64"),
+        bigquery.SchemaField("temp_humidity", "FLOAT64"),
+        bigquery.SchemaField("weather_class", "STRING"),
+        bigquery.SchemaField("weather_description", "STRING"),
+    ]
+
+    # Construct a BigQuery client object.
+    client = bigquery.Client()
+
+    # Set the full table reference, which includes the project ID, dataset ID, and table name.
+    table_ref = bigquery.TableReference.from_string(
+        "{}.{}.{}".format(project_name, dataset_name, table_name)
+    )
+
+    # Check if the table already exists.
+    try:
+        client.get_table(table_ref)
+        print("Table {}.{}.{} already exists.".format(project_name, dataset_name, table_name))
+    except NotFound:
+        print("Table {}.{}.{} is not found.".format(project_name, dataset_name, table_name))
+
+        # Define the GCS URI.
+        uri = "gs://{}/{}".format(bucket_name, file_path)
+
+        # Use the client to create a new table.
+        table = bigquery.Table(table_ref, schema=schema)
+        table = client.create_table(table)  # Make an API request.
+        print("Table {}.{}.{} created.".format(project_name, dataset_name, table_name))
+
+    # Configure the external data source and start the BigQuery Load job.
+    job_config = bigquery.LoadJobConfig(
+        #autodetect=True,
+        schema=schema,
+        source_format=bigquery.SourceFormat.CSV,
+        skip_leading_rows=1,
+    )
+    load_job = client.load_table_from_uri(uri, table_ref, job_config=job_config)
+
+    # Wait for the job to complete.
+    return print(load_job.result())
+
+    #EoF
+
+
+########################################
 #Reads GCS blob and writes to local file
 #TODO: NOT WORKING
 def get_config_from_gcs_csv(bucket_name = 'your_bucket_name', 
