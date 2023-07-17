@@ -161,7 +161,7 @@ def list_gcs_blobs(bucket_name = 'rainday-gameday-bucket'):
     #List blobs in bucket
     # for blob in blobs_list:
     #     print(blob.name)
-    
+    print('func list_gcs_blobs: finished')
     return blobs_list
 
 
@@ -175,24 +175,24 @@ def union_gcs_csv_blobs(blobs_list=None,
     import io
     dfs = []
     csv_content = io.StringIO()
-
+    
     for blob in blobs_list:
         if blob.name.startswith(csvs_to_union_folder_location) and blob.name.endswith('.csv') and not blob.name.endswith('/'):
-            print(blob.name)
-            # Download blob as a pandas DataFrame
-            print(type(blob.download_as_text()))
-            
+
             #write blob string content to StringIO object 
             csv_content.write(blob.download_as_text())
             csv_content.seek(0)
 
             #Get it into a df
             df = pd.read_csv(csv_content)
+
+            #append to df list
             dfs.append(df)
 
     # Union all DataFrames
     unioned_dfs = pd.concat(dfs)
 
+    print('func union_gcs_csv_blobs: finished')
     return unioned_dfs
 
 
@@ -508,3 +508,15 @@ def compareWeatherResults(list_of_all_forecast_dfs,
     
     return forecastsandweathercat_df
     #EOF
+
+############## UTILITY FUNCS ##############
+
+def write_to_csv_and_xlsx(df, filename='df'):
+    import pandas as pd
+    import os
+
+    df.to_csv(f"{filename}.csv", index=False)
+    df.to_excel(f"{filename}.xlsx", index=False)
+    
+    return print(f"function write_to_csv_and_xlsx: finsihed\n  -Wrote to: {os.getcwd()}")
+    #EoF
