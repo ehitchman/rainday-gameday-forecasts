@@ -105,29 +105,43 @@ def write_df_to_gcs(df,
 
 ########################################
 #Reads GCS blob and writes to local file
-def get_config_from_gcs_xlsx(bucket_name = 'your_bucket_name', 
-                             gcs_bucket_blobpath = 'your/bucket/blobpath.xlsx', 
-                             is_testing_run=False):
+#TODO: NOT WORKING
+def get_config_from_gcs_csv(bucket_name = 'your_bucket_name', 
+                            gcs_bucket_blobdir = 'your\\blob\\directory',
+                            gcs_blob_name = 'your-blob_name.csv',
+                            is_testing_run=False):
     
+    bucket_name = 'rainday-gameday-bucket'
+    gcs_bucket_blobdir = 'forecast_history_csv'
+    gcs_blob_name = 'all_historic_forecasts.csv'
+
+    #imports
     from google.cloud import storage
     import io
     import pandas as pd
+    import os
+
+    #set/create variables
+    gcs_blobpath = os.path.join(gcs_bucket_blobdir, gcs_blob_name)
 
     # get the bucket that the file will be uploaded to.
     storage_client = storage.Client()
     bucket_object = storage_client.get_bucket(bucket_name)
 
     # Create a new local blob and download file to local directory
-    fileblob_object = bucket_object.blob(gcs_bucket_blobpath)
-    fileblob_object.download_to_filename('config_user-details.xlsx')
+    fileblob_object = bucket_object.blob(gcs_blobpath)
+    
+    gcs_blobpath = 'forecast_history_csv//all_historic_forecasts.csv'
+    fileblob_object.download_to_filename(gcs_blobpath)
+
     
     #read xlsx for return
-    df = pd.read_excel('config_user-details.xlsx')
+    df = pd.read_csv(gcs_blob_name)
     
     if 'a' != 'a':
         message = ''
     else:
-        message = f"Retrieved {bucket_name} at location {gcs_bucket_blobpath} to dataframe" 
+        message = f"Retrieved {bucket_name} at location {gcs_bucket_blobdir} to dataframe" 
     
     print(message)
 
