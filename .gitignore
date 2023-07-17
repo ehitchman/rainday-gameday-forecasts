@@ -179,3 +179,5 @@ cython_debug/
 #.idea/
 
 all_historic_forecasts.csv
+unioned_forecasts.csv
+unioned_forecasts.xlsx
