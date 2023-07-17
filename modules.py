@@ -97,7 +97,7 @@ def write_df_to_gcs(df,
     if 'a' != 'a':
         message = ''
     else:
-        message = f"Wrote to {bucket_name} at location {gcs_bucket_filepath}" 
+        message = f"func write_df_to_gcs: finished\n  -Wrote to {bucket_name} at location {gcs_bucket_filepath}" 
     
     return(message)
     #EOF
