@@ -24,7 +24,8 @@ def main(request=None, is_testing_run=False):
     #GCS related variables
     bucket_name = yaml_data['bucket_name']
     todays_date = datetime.today().strftime('%Y-%m-%d')
-    gcs_file_path = yaml_data['5dayforecast_csvpath']+f'_{todays_date}'+'.csv'
+    gcs_folder_path = yaml_data['5dayforecast_csvdir']
+    gcs_file_path = gcs_folder_path+'/'+f'5-day forecast_{todays_date}'+'.csv'
     bcs_file_path_wout_date = yaml_data['5dayforecast_individual_csvpath']
 
     #set/declare variables/objects
@@ -124,13 +125,19 @@ def union_and_write_gcs_blob_forecasts_to_gcs(request=None, is_testing_run=False
     yaml_data = load_yaml()
 
     # Define the GCS bucket and file information
-    bucket_name = 'rainday-gameday-bucket'
-    gcs_file_name = 'all_historic_forecasts.csv'
+    bucket_name = yaml_data['bucket_name']
+    
+    #This is the scripts output, the final unioned forecast.  The file will
+    # contain a row for every forecast_date_capture, forecast_time, user   
+    gcs_file_name = 'all_historic_forecasts.csv' 
     gcs_forecasthistory_bucket_directory = yaml_data['5dayforecast_historic_forecast_csvdir']
-    gcs_forecasthistory_filepath = os.path.join(gcs_forecasthistory_bucket_directory, gcs_file_name).replace('\\', '/')
+    gcs_forecasthistory_filepath = os.path.join(gcs_forecasthistory_bucket_directory, 
+                                                gcs_file_name).replace('\\', '/')
+    
+    # Get all historic daily CSV files from the bucket and union them together
+    #  - directory should contain multiple files, each one containing a single
+    # forecast containing multiple forecast times and users
     csvs_to_union_folder_location = yaml_data['5dayforecast_csvdir']
-
-    # Get all CSV files from the bucket and union them together
     blobs_list = list_gcs_blobs(bucket_name=bucket_name)
     unioned_forecasts = union_gcs_csv_blobs(blobs_list=blobs_list,
                                             csvs_to_union_folder_location=csvs_to_union_folder_location)
