@@ -26,7 +26,7 @@ def main(request=None, is_testing_run=False):
     todays_date = datetime.today().strftime('%Y-%m-%d')
     gcs_folder_path = yaml_data['5dayforecast_csvdir']
     gcs_file_path = gcs_folder_path+'/'+f'5-day forecast_{todays_date}'+'.csv'
-    bcs_file_path_wout_date = yaml_data['5dayforecast_individual_csvpath']
+    bcs_file_name_wout_date = yaml_data['5dayforecast_individual_csvpath']
 
     #set/declare variables/objects
     log_response_file_name = yaml_data['response_file_name']
@@ -75,7 +75,7 @@ def main(request=None, is_testing_run=False):
         #upload INDIVIDUAL forecast to GCS
         write_df_to_gcs(df=json_forecast_details, 
                         bucket_name=bucket_name, 
-                        gcs_bucket_filepath=bcs_file_path_wout_date+"_"+user_name+'.csv', 
+                        gcs_bucket_filepath=bcs_file_name_wout_date+'/'+'5-day forecast_'+user_name+'.csv', 
                         is_testing_run=False)
         
         #append df to new all forecasts list item and users name list item
@@ -118,7 +118,7 @@ def union_and_write_gcs_blob_forecasts_to_gcs(request=None, is_testing_run=False
 
     # Import necessary libraries and modules
     import pandas as pd
-    from modules import load_yaml, list_gcs_blobs, union_gcs_csv_blobs, write_df_to_gcs
+    from modules import load_yaml, list_gcs_blobs, union_gcs_csv_blobs, write_df_to_gcs, write_to_csv_and_xlsx
     import os
 
     # Load the YAML configuration data
@@ -141,6 +141,9 @@ def union_and_write_gcs_blob_forecasts_to_gcs(request=None, is_testing_run=False
     blobs_list = list_gcs_blobs(bucket_name=bucket_name)
     unioned_forecasts = union_gcs_csv_blobs(blobs_list=blobs_list,
                                             csvs_to_union_folder_location=csvs_to_union_folder_location)
+
+    # TEST: Write unioned_Forecasts to file for invest.
+    #write_to_csv_and_xlsx(df=unioned_forecasts, filename='unioned_forecasts')
 
     # Write the unioned forecasts to GCS
     write_df_to_gcs(df=unioned_forecasts,
