@@ -4,6 +4,10 @@
 
 #------------------------------------------------------------------------------#
 
+
+############## UTILITY FUNCS ##############
+############## UTILITY FUNCS ##############
+
 #load environment/yaml
 def  load_yaml(filepathfromwd='config.yaml'):
     import yaml
@@ -20,7 +24,6 @@ def  load_yaml(filepathfromwd='config.yaml'):
     return yaml_data
     #EOF
 
-
 #load environment/yaml
 def load_environment(yaml_data):
     import os
@@ -33,8 +36,17 @@ def load_environment(yaml_data):
     envfile_path_string = os.path.join(os.getcwd(),yaml_data['envfile_name'])
     print("Environment file loaded: ",load_dotenv(envfile_path_string))
 
+#Write a df to os.getcwd()
+def write_to_csv_and_xlsx(df, filename='df'):
+    import pandas as pd
+    import os
 
-########################################
+    df.to_csv(f"{filename}.csv", index=False)
+    df.to_excel(f"{filename}.xlsx", index=False)
+    
+    return print(f"function write_to_csv_and_xlsx: finsihed\n  -Wrote to: {os.getcwd()}")
+    #EoF
+
 #write dataframe to file
 def writeDfToCsv(df,
                  filename=f'file.xlsx',
@@ -61,64 +73,26 @@ def writeDfToCsv(df,
     #EOF
 
 
-##########################################
-#Writes dataframe to specified bucket/path
-def write_df_to_gcs(df, 
-                    bucket_name = 'your_bucket_name', 
-                    gcs_bucket_filepath = 'your/buckjet/filepath.csv', 
-                    is_testing_run=False):
-    
-    import pandas as pd
-    from google.cloud import storage
-    import io
-    from datetime import datetime
+############ GCS FUNCTIONS ############
+############ GCS FUNCTIONS ############
 
-    if is_testing_run == True:
-        #simple dataframe
-        df = pd.DataFrame(data=[[1,2,3],[4,5,6]],columns=['a','b','c'])
-
-    # get the bucket that the file will be uploaded to.
-    storage_client = storage.Client()
-    bucket_object = storage_client.get_bucket(bucket_name)
-
-    # Create a new blob and upload the file's content.
-    fileblob_object = bucket_object.blob(gcs_bucket_filepath)
-
-    # create/open and then write df to file object
-    file_object = io.StringIO()
-    df.to_csv(file_object, index=False)
-    file_object.seek(0) #move to beginning for using read() below
-
-    # upload from string and close file
-    fileblob_object.upload_from_string(file_object.read(), content_type="text/csv")
-    file_object.close()
-
-    #error checking
-    if 'a' != 'a':
-        message = ''
-    else:
-        message = f"func write_df_to_gcs: finished\n  -Wrote to {bucket_name} at location {gcs_bucket_filepath}" 
-    
-    return(message)
-    #EOF
-
-
-########################################
 #Creates big query table from GCS blob
 def create_bq_table_from_gcs(project_name = 'your-project-name', 
                           bucket_name = 'your-bucket-name' ,
                           dataset_name = 'rainday-gameday-models', 
-                          table_name = 'your_new_table_name',
-                          file_path = 'file_location_for_new_table'):
+                          target_table_name = 'your_new_table_name',
+                          source_file_path = 'file_location_for_new_table',
+                          is_testing_run = False):
     """
     Creates a BigQuery table from a CSV file in Google Cloud Storage (GCS) if the table does not already exist.
 
     Args:
         project_name (str): The ID of the Google Cloud project.
         dataset_name (str): The ID of the BigQuery dataset within the project.
-        table_name (str): The name of the BigQuery table to be created within the dataset.
+        target_table_name (str): The name of the BigQuery table to be created within the dataset.
+        source_file_path (str): The name of the google cloud storage source file to create the dataset
         bucket_name (str): The name of the GCS bucket where the CSV file is stored.
-        file_path (str): The path to the CSV file in the GCS bucket.
+        source_file_path (str): The path to the CSV file in the GCS bucket.
 
     Example:
         create_table_from_gcs('your-project', 'your-dataset', 'your-table', 'rainday-gameday-bucket', 'forecast_history_csv/all_historic_forecasts.csv')
@@ -129,27 +103,33 @@ def create_bq_table_from_gcs(project_name = 'your-project-name',
     """
 
     #TESTING
-    project_name = 'eh-rainday-gameday'   
-    bucket_name = 'rainday-gameday-bucket'
-    dataset_name = 'forecast_models' 
-    table_name = 'forecast_history_all_users'
-    file_path = 'forecast_history_csv/all_historic_forecasts.csv'
+    is_testing_run = True
+    if is_testing_run == True:
+        project_name = 'eh-rainday-gameday'   
+        bucket_name = 'rainday-gameday-bucket'
+        dataset_name = 'models_forecast' 
+        target_table_name = 'forecast_history_all_users'
+        source_file_path = 'forecast_history_csv/all_historic_forecasts.csv'
 
-    #imports
+    # imports
     from google.cloud import bigquery
     from google.cloud.exceptions import NotFound
 
+    # Define the GCS URI.
+    uri = "gs://{}/{}".format(bucket_name, source_file_path)
+
+    # Define the expected schema incase a table is not found 
     schema = [
         bigquery.SchemaField("forecast_capture_date", "STRING"),
-        bigquery.SchemaField("forecast_dateunix", "FLOAT"),
+        bigquery.SchemaField("forecast_dateunix", "STRING"), #FLOAT
         bigquery.SchemaField("forecast_datestring", "STRING"),
         bigquery.SchemaField("name", "STRING"),
         bigquery.SchemaField("rain_category", "STRING"),
-        bigquery.SchemaField("rain_category_value", "INTEGER"),
-        bigquery.SchemaField("temp", "FLOAT64"),
-        bigquery.SchemaField("temp_min", "FLOAT64"),
-        bigquery.SchemaField("temp_max", "FLOAT64"),
-        bigquery.SchemaField("temp_humidity", "FLOAT64"),
+        bigquery.SchemaField("rain_category_value", "STRING"), #INTEGER
+        bigquery.SchemaField("temp", "STRING"), #FLOAT64
+        bigquery.SchemaField("temp_min", "STRING"), #FLOAT64
+        bigquery.SchemaField("temp_max", "STRING"), #FLOAT64
+        bigquery.SchemaField("temp_humidity", "STRING"), #FLOAT64
         bigquery.SchemaField("weather_class", "STRING"),
         bigquery.SchemaField("weather_description", "STRING"),
     ]
@@ -158,28 +138,26 @@ def create_bq_table_from_gcs(project_name = 'your-project-name',
     client = bigquery.Client()
 
     # Set the full table reference, which includes the project ID, dataset ID, and table name.
-    table_ref = bigquery.TableReference.from_string(
-        "{}.{}.{}".format(project_name, dataset_name, table_name)
-    )
+    table_fullqual = "{}.{}.{}".format(project_name, dataset_name, target_table_name)
+    table_ref = bigquery.TableReference.from_string(table_fullqual)
+    type(table_ref)
+    type(table_fullqual)
 
     # Check if the table already exists.
     try:
         client.get_table(table_ref)
-        print("Table {}.{}.{} already exists.".format(project_name, dataset_name, table_name))
+        print(f"Table {table_fullqual} already exists.")
     except NotFound:
-        print("Table {}.{}.{} is not found.".format(project_name, dataset_name, table_name))
-
-        # Define the GCS URI.
-        uri = "gs://{}/{}".format(bucket_name, file_path)
+        print(f"Table {table_fullqual} is not found.\n Creating new table")
 
         # Use the client to create a new table.
         table = bigquery.Table(table_ref, schema=schema)
         table = client.create_table(table)  # Make an API request.
-        print("Table {}.{}.{} created.".format(project_name, dataset_name, table_name))
+        print(f"Table {table_fullqual} created.")
 
     # Configure the external data source and start the BigQuery Load job.
     job_config = bigquery.LoadJobConfig(
-        #autodetect=True,
+        autodetect=False,
         schema=schema,
         source_format=bigquery.SourceFormat.CSV,
         skip_leading_rows=1,
@@ -187,12 +165,13 @@ def create_bq_table_from_gcs(project_name = 'your-project-name',
     load_job = client.load_table_from_uri(uri, table_ref, job_config=job_config)
 
     # Wait for the job to complete.
-    return print(load_job.result())
+    load_job_result = load_job.result()
+    print(load_job_result)
+    return print(load_job_result)
 
     #EoF
 
 
-########################################
 #Reads GCS blob and writes to local file
 #TODO: NOT WORKING
 def get_config_from_gcs_csv(bucket_name = 'your_bucket_name', 
@@ -238,7 +217,6 @@ def get_config_from_gcs_csv(bucket_name = 'your_bucket_name',
     #EOF
 
 
-########################################
 #TODO: upload updated config located in root directory (move to different location?)
 def upload_config_to_gcs_xlsx(bucket_name='your_bucket_name',
                               gcs_bucket_blobpath='your/bucket/blobpath.xlsx',
@@ -251,7 +229,6 @@ def upload_config_to_gcs_xlsx(bucket_name='your_bucket_name',
     #EoF
 
 
-########################################
 # list all files/directories/blobs
 def list_gcs_blobs(bucket_name = 'rainday-gameday-bucket'):
     
@@ -268,14 +245,15 @@ def list_gcs_blobs(bucket_name = 'rainday-gameday-bucket'):
     return blobs_list
 
 
-#######################################
 # Union blobs 
 def union_gcs_csv_blobs(blobs_list=None, 
-                        csvs_to_union_folder_location=''):
+                        csvs_to_union_folder_location='',
+                        is_testing_run=False):
 
     import pandas as pd
     from google.cloud import storage
     import io
+
     dfs = []
     csv_content = io.StringIO()
     
@@ -293,13 +271,62 @@ def union_gcs_csv_blobs(blobs_list=None,
             dfs.append(df)
 
     # Union all DataFrames
-    unioned_dfs = pd.concat(dfs)
+    unioned_dfs = pd.concat(dfs, ignore_index=True) #ignore_indexadded 07-17
 
+    # Testing: Write unioned_Forecasts to file for invest.
+    is_testing_run = True
+    if is_testing_run == True:
+        write_to_csv_and_xlsx(df=unioned_dfs, filename='unioned_dfs')
+    
+    # Finished
     print('func union_gcs_csv_blobs: finished')
     return unioned_dfs
 
 
-#########################################
+#Writes dataframe to specified bucket/path
+def write_df_to_gcs(df, 
+                    bucket_name = 'your_bucket_name', 
+                    gcs_bucket_filepath = 'your/buckjet/filepath.csv', 
+                    is_testing_run=False):
+    
+    import pandas as pd
+    from google.cloud import storage
+    import io
+    from datetime import datetime
+
+    if is_testing_run == True:
+        #simple dataframe
+        df = pd.DataFrame(data=[[1,2,3],[4,5,6]],columns=['a','b','c'])
+
+    # get the bucket that the file will be uploaded to.
+    storage_client = storage.Client()
+    bucket_object = storage_client.get_bucket(bucket_name)
+
+    # Create a new blob and upload the file's content.
+    fileblob_object = bucket_object.blob(gcs_bucket_filepath)
+
+    # create/open and then write df to file object
+    file_object = io.StringIO()
+    df.to_csv(file_object, index=False)
+    file_object.seek(0) #move to beginning for using read() below
+
+    # upload from string and close file
+    fileblob_object.upload_from_string(file_object.read(), content_type="text/csv")
+    file_object.close()
+
+    #error checking
+    if 'a' != 'a':
+        message = ''
+    else:
+        message = f"func write_df_to_gcs: finished\n  -Wrote to {bucket_name} at location {gcs_bucket_filepath}" 
+    
+    return(message)
+    #EOF
+
+
+######### WEATHER DATA FUNCTIONS ########
+######### WEATHER DATA FUNCTIONS ########
+
 #Function to get the forecast from openweatherAPI
 def getWeatherForecast(openweathermap_api_key=None,
                        user_name=None, lat=None, lon=None,
@@ -313,6 +340,8 @@ def getWeatherForecast(openweathermap_api_key=None,
     import requests
     import json
     
+    print(f'getWeatherForecast() is running, testing run: {is_testing_run}')
+
     #Get the key and set test values if is_Testing_run is set to True
     #is_testing_run=True
     if is_testing_run == True:
@@ -323,15 +352,18 @@ def getWeatherForecast(openweathermap_api_key=None,
         write_to_directory=False
         log_responses_directory = 'log/responses'
         log_response_file_name = 'response'
-        print('LOG getWeatherForecast(): is testing run:', is_testing_run, '.  Using testing API KEY and lon/lat values')
+        message = ' -Using testing API KEY and lon/lat values'
     else: 
         # Get open weather api key
         OPENWEATHERMAP_API_KEY = openweathermap_api_key
-        print('LOG getWeatherForecast(): is testing run:', is_testing_run,".  Getting lon/lat/user values")
+        message = ' -Using .env API KEY, getting lon/lat/user values'
+    print(message)
 
     #get request
     getrequest = requests.get(f'https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&units=metric&appid={OPENWEATHERMAP_API_KEY}')
-    print(f'LOG: GOT REQUEST WITH\n --RESPONSE CODE: {getrequest.status_code}')
+    
+    print((f'{message}\n'
+           f' Got response (code: {getrequest.status_code})'))
 
     #save response to json file `OR retieve a historic response for use
     if getrequest.status_code == 200:
@@ -344,13 +376,11 @@ def getWeatherForecast(openweathermap_api_key=None,
             with open(os.path.join(os.getcwd(),log_responses_directory,log_response_file_name+'_'+str(user_name)+'.json'),
                     "w") as file:
                 json.dump(json_user_forecast, file)
-                file.close
-                
-            print(f"--Response (type: {type(json_user_forecast)} saved to {log_response_file_name}_{str(user_name)}")
+                file.close              
+            print(f" -Response type: {type(json_user_forecast)} (saved to {log_response_file_name}_{str(user_name)})")
     else:
         #get the most recent (or whatever) response file in log_responses_directory
-        print(f"--LOG: Request failed with status code: {getrequest.status_code}, " \
-                "Loading instead a sample json response from internals")
+        print((f" -Request failed, loading a sample json response from internals"))
 
         #iterate over log responses directory
         for file in os.listdir(log_responses_directory):
@@ -371,14 +401,13 @@ def getWeatherForecast(openweathermap_api_key=None,
     #add usersname to json response data in local object
     json_user_forecast['user_name'] = user_name
 
-    print(f"--return object for {user_name} is of type: {type(json_user_forecast)}")
+    print(f" -getWeatherForecast() finished, return object for {user_name} is of type: {type(json_user_forecast)}")
 
     #return json_user_forecast in the form of a dictionary
     return json_user_forecast
     #EOF
 
 
-#########################################
 #Function to take a request object's JSON data in the form of a dictionary
 def transformJsonForecast(json_user_forecast,
                           is_testing_run=True):
@@ -406,6 +435,7 @@ def transformJsonForecast(json_user_forecast,
 
     #json_user_forecast_list now contains multiple forecasts. Review each and capture the
     # date/rain status (=rain or !=rain) in lists for building a dataframe
+    print('getWeatherForecast() is running, testing run: {is_testing_run}')
     for i, singleuserssingleforecast in enumerate(json_user_forecast_list):
         
         #get date fields
@@ -437,25 +467,21 @@ def transformJsonForecast(json_user_forecast,
     list_of_zipped_lists = list(zipped_lists)
     
     forecast_df = pd.DataFrame(list_of_zipped_lists, columns = forecast_schema)
-    # removed 12:05pm 2023-06-12 #list_of_forecast_dfs.append(forecast_df)
 
-    ####################################################################
+    # Test cases
     if is_testing_run == True:
         #NOTE/TESTING THIS GENERATES A SECOND DF TO THE LIST AND IS FOR TESTING ONLY
         df2 = forecast_df.replace({'eric':'john'}, inplace=False)
         forecast_df = [forecast_df,df2]
-        print('LOG transformJsonForecast(): is testing run:', is_testing_run)
+        print(f' -Test run: {is_testing_run}, building extra dfs manually')
     else: 
-        print('LOG transformJsonForecast(): is testing run:', is_testing_run, '. Returning list_of_forecast_dfs')
-    ####################################################################
-
-    print(f"--return object for {user_name} is of type: {type(forecast_df)}")
+        print(f' -Test run: {is_testing_run}, used get request dfs')
+    print(f" -transformJsonForecast() finished, return object for {user_name} is of type: {type(forecast_df)}")
 
     return forecast_df
     #EOF
 
 
-#########################################
 #Function to take a request object's JSON data in the form of a dictionary
 def transformJsonForecast_table(json_user_forecast,
                                 is_testing_run=True):
@@ -487,8 +513,10 @@ def transformJsonForecast_table(json_user_forecast,
     # Access specific data from the JSON
     json_user_forecast_list = json_user_forecast['list']
 
+
     #json_user_forecast_list now contains multiple forecasts. Review each and capture the
     # date/rain status (=rain or !=rain) in lists for building a dataframe
+    print(f'transformJsonForecast_table() is running, testing run: {is_testing_run}')
     for i, singleuserssingleforecast in enumerate(json_user_forecast_list):
         
         #get date fields
@@ -545,19 +573,17 @@ def transformJsonForecast_table(json_user_forecast,
         #NOTE/TESTING THIS GENERATES A SECOND DF TO THE LIST AND IS FOR TESTING ONLY
         df2 = forecast_df.replace({'eric':'john'}, inplace=False)
         forecast_df = [forecast_df,df2]
-        print('LOG transformJsonForecast(): is testing run:', is_testing_run)
+        print(f' -Test run: {is_testing_run}, building extra dfs manually')
     else: 
-        print('LOG transformJsonForecast(): is testing run:', is_testing_run, '. Returning list_of_forecast_dfs')
-
-    print(f"--return object for {user_name} is of type: {type(forecast_df)}")
+        print(f' -Test run: {is_testing_run}, used get request dfs')
+    print(f" -transformJsonForecast_table() finished, return object for {user_name} is of type: {type(forecast_df)}")
 
     return forecast_df
     #EOF
 
 
-#########################################
-#2. Use pandas to group by date and name and location and then take the
-# max of "forecast_weather_category_values" by DAY
+#Use pandas to group by date and name and location and then take the max of 
+# "forecast_weather_category_values" by DAY
 def compareWeatherResults(list_of_all_forecast_dfs, 
                           is_testing_run=True):
     
@@ -569,9 +595,9 @@ def compareWeatherResults(list_of_all_forecast_dfs,
         ################
         if is_testing_run == True:
             i=0 #NOTE/TESTING THIS IS FOR TESTING ONLY
-            print('LOG compareWeatherResults(): is testing run:', is_testing_run)
+            print('compareWeatherResults() is running, test run:', is_testing_run)
         else:
-            print('LOG compareWeatherResults(): is testing run:', is_testing_run)
+            print('compareWeatherResults() is running, test run:', is_testing_run)
         ################
 
         #Slices he list of dataframes to get just the nth dataframe and then:
@@ -609,17 +635,6 @@ def compareWeatherResults(list_of_all_forecast_dfs,
     #   2023-06-09 00:00    [eric, crube, nano] 'rain'
     #   2023-06-09 04:00    [crube, oath, prag] 'cuz its saturday'
     
+    print(f' -compareWeatherResults() finished, return object is of type: {type(forecastsandweathercat_df)}"')
     return forecastsandweathercat_df
     #EOF
-
-############## UTILITY FUNCS ##############
-
-def write_to_csv_and_xlsx(df, filename='df'):
-    import pandas as pd
-    import os
-
-    df.to_csv(f"{filename}.csv", index=False)
-    df.to_excel(f"{filename}.xlsx", index=False)
-    
-    return print(f"function write_to_csv_and_xlsx: finsihed\n  -Wrote to: {os.getcwd()}")
-    #EoF
