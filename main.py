@@ -142,8 +142,9 @@ def union_and_write_gcs_blob_forecasts_to_gcs(request=None, is_testing_run=False
     unioned_forecasts = union_gcs_csv_blobs(blobs_list=blobs_list,
                                             csvs_to_union_folder_location=csvs_to_union_folder_location)
 
-    # TEST: Write unioned_Forecasts to file for invest.
-    #write_to_csv_and_xlsx(df=unioned_forecasts, filename='unioned_forecasts')
+    # TEST: Write unioned_Forecasts to file for qc
+    #write_to_csv_and_xlsx(df=unioned_forecasts, 
+    #                       filename=os.join.path('data','unioned dfs', 'unioned_forecasts')
 
     # Write the unioned forecasts to GCS
     write_df_to_gcs(df=unioned_forecasts,
@@ -153,9 +154,9 @@ def union_and_write_gcs_blob_forecasts_to_gcs(request=None, is_testing_run=False
 
     return print(f"FINISHED: The combined/unioned forecasts have been saved to GCS bucket: {bucket_name} in location: {gcs_forecasthistory_filepath}")
 
-
+#entry point for gcf
 @functions_framework.http
-def main(): #entry point for gcf
+def main(request=None): 
     get_weather_forecast_and_write_to_gcs()
     union_and_write_gcs_blob_forecasts_to_gcs()
 
