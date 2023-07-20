@@ -665,3 +665,77 @@ def compareWeatherResults(list_of_all_forecast_dfs,
     print(f' -compareWeatherResults() finished, return object is of type: {type(forecastsandweathercat_df)}"')
     return forecastsandweathercat_df
     #EOF
+
+
+#Function gathers a ditionary for use in bot.py.  Uses getWeatherForecast, 
+# transformJsonForecast, transformJsonForecast_table, compareWeatherResults 
+def getRaindayGamedayOptions():
+    #improt local module
+    from modules import getWeatherForecast, transformJsonForecast, compareWeatherResults, load_yaml, load_environment
+
+    ############################################################
+    #TODO change envfile_path_string in config.yml
+    # - Update the uri for the env path.  Create a template env file, etc.
+    # - End goal is to make script easily usable by others
+    
+    #load environment variables and config.yml
+    yaml_data = load_yaml()
+    load_environment(yaml_data)
+
+    #set/declare variables/objects
+    log_response_file_name = yaml_data['response_file_name']
+    users_details_list = yaml_data['users_details']
+    log_responses_directory = yaml_data['log_responses_directory']
+    list_of_forecast_dfs = []
+    list_of_all_forecast_dfs = []
+    list_of_all_users_names = []
+    dict_returned_objects = {}
+
+    for i, user in enumerate(users_details_list):
+        
+        #get users_detail list and details
+        user_details = users_details_list[i]
+        user_name = user_details['name']
+        user_lon = user_details['lon']
+        user_lat = user_details['lat']
+        print("Getting forecast for", user_name)
+
+        #NOTE does it make sense to be calling a function directly inside of a 
+        # function?  Is this a sign of poor design?
+        #df_forecast = transformJsonForecast(getWeatherForecast(users_name, users_lon, users_lat))
+        json_forecast = getWeatherForecast(user_name = user_name,
+                                        lon = user_lon,
+                                        lat = user_lat,
+                                        is_testing_run=False,
+                                        log_response_file_name = log_response_file_name,
+                                        log_responses_directory = log_responses_directory,
+                                        i = i)
+        
+        print(f'Finished call to getWeatherForecast for {user_name}')
+
+        #Run transformJsonForecast
+        list_of_forecast_dfs = transformJsonForecast(json_user_forecast = json_forecast,
+                                                    is_testing_run = False)
+        #print("list_of_forecast_dfs is of type:", type(list_of_forecast_dfs))
+        print(f'Finished call to transformJsonForecast for {user_name}')
+
+        #append df to new all forecasts list item and users name list item
+        list_of_all_forecast_dfs.append(list_of_forecast_dfs)
+        list_of_all_users_names.append(user_name)
+
+    #print logs
+    print("returned list_of_all_forecast_dfs of type", type(list_of_all_forecast_dfs), 'and length', len(list_of_all_forecast_dfs))
+
+    #TODO concatenate all dfs from df list into a single table for use with pandas
+    raindaygameday = compareWeatherResults(list_of_all_forecast_dfs = list_of_all_forecast_dfs,
+                                           is_testing_run=False)
+    print(f'Finished call to compareWeatherResults for {user_name}')
+    raindaygameday = raindaygameday['forecast_datestring']
+
+    #add objects to return dictionary
+    dict_returned_objects['dates_and_times_df'] = raindaygameday
+    dict_returned_objects['users_names_list'] = list_of_all_users_names
+
+    #return dictionary
+    print('EoF: return object is of type:',type(dict_returned_objects))
+    return dict_returned_objects
