@@ -2,6 +2,7 @@
 rainday-gameday-forecasts.code-workspace
 
 #my ignores
+config.env
 env.py
 pyvenv.cfg
 config.yaml
