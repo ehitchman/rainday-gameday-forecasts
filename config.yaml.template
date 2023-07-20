@@ -1,6 +1,9 @@
 name: 'workspace and user config'
 OPENWEATHERMAP_API_KEY: 'your-api-key'
+DISCORD_WEATHERGAMING_BOT_TOKEN: 'your-bot-token'
 is_testing_run: False
+envfile_name: 'your-env-file-name.env'
+env_filedir: 'your\env\files\directory'
 log_responses_directory: 'log/responses'
 response_file_name: 'response'
 bucket_name: "your-bucket-name"
