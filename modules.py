@@ -8,6 +8,7 @@
 ############## UTILITY FUNCS ##############
 ############## UTILITY FUNCS ##############
 
+import logging
 
 #Load parameters from config.yaml
 def load_yaml(yaml_filename='config.yaml', yaml_dirname=''):
