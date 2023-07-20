@@ -8,33 +8,60 @@
 ############## UTILITY FUNCS ##############
 ############## UTILITY FUNCS ##############
 
-#load environment/yaml
-def  load_yaml(filepathfromwd='config.yaml'):
+
+#Load parameters from config.yaml
+def load_yaml(yaml_filename='config.yaml', yaml_dirname=''):
     import yaml
-    import os 
-
-    ########################################
-    #Load YAML FILE FIRST (ensures that envfile_path_string is loaded to capture environment)
-    fullfilepath = os.path.join(os.getcwd(),filepathfromwd)
-    with open(fullfilepath, "r") as file:
-        yaml_data = yaml.safe_load(file)
-        file.close
-    print(f"Yaml file loaded from path:{fullfilepath}")
-
-    return yaml_data
-    #EOF
-
-#load environment/yaml
-def load_environment(yaml_data):
     import os
-    from dotenv import load_dotenv
+    """Load parameters from a yaml file.
 
-    #########################################
-    #NOTE: should this be moved to main.py?
-    #NOTE: Load environment file via path object sourced from yaml and get the environment
-    # variables for __________
-    envfile_path_string = os.path.join(os.getcwd(),yaml_data['envfile_name'])
-    print("Environment file loaded: ",load_dotenv(envfile_path_string))
+    Args:
+    yaml_filename (str): Path to the yaml file.
+
+    Returns:
+    dict: Dictionary containing parameters loaded from yaml file.
+    
+    Test:
+    yaml_filename = 'config.yaml'
+    yaml_dirname = 'C:\\Users\\erich\\OneDrive\\Desktop\\_work\\__repos\\rainday-gameday-forecasts'                      
+    """
+
+    # use the argument instead of hardcoding the path
+    yaml_filepath = os.path.join(os.getcwd(), yaml_dirname, yaml_filename)
+    print(yaml_filepath)
+    with open(yaml_filepath, 'r') as file:
+        yaml_config = yaml.safe_load(file)
+        logging.info('YAML contents loaded successfully.')
+    return yaml_config
+    
+
+
+#Loads environment variables from config.env
+def load_env(env_filename='config.env', env_dirname='config'):
+    import os
+    import dotenv
+    """Load environment variables from a .env file.
+
+    Args:
+    env_filename (str): name of the .env file.
+    env_filedir (str): path of the directory the .env file is in
+    yaml_filename = 'config.yaml'
+    yaml_dirname ='c:\\Users\\erich\\OneDrive\\Desktop\\_work\\__repos\\discord-chatforme\\config'
+    
+    Test:
+    env_filename='config.env'
+    env_dirname='c:\\Users\\erich\\OneDrive\\Desktop\\_work\\__repos\\discord-chatforme\\config'
+    """
+    
+    env_filepath = os.path.join(os.getcwd(), env_dirname, env_filename)
+    print(env_filepath)
+    if dotenv.load_dotenv(env_filepath):
+        logging.info('Environment file loaded successfully.')
+    else:
+        logging.error('Failed to load environment file.')
+
+
+
 
 #Write a df to os.getcwd()
 def write_to_csv_and_xlsx(df, filename='df'):
