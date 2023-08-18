@@ -131,7 +131,7 @@ def create_bq_table_from_gcs(project_name = 'your-project-name',
     """
 
     #TESTING
-    is_testing_run = True
+    #is_testing_run = True
     if is_testing_run == True:
         project_name = 'eh-rainday-gameday'   
         bucket_name = 'rainday-gameday-bucket'
