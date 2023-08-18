@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../eh-resources/eh-resources"
+		},
+		{
+			"path": "../eh-resources/eh-resources/eh-gpt-resources"
 		}
 	],
 	"settings": {}
