@@ -1,8 +1,8 @@
 ###Execute in gcloud shell after gcloud init
-# - Source should poitn to a directory, not a file name (necessarily)
-# - Entry poiunt is the function in question (usually main()?)
-#--stage-bucket=rainday-gameday
-#--env-vars-file=./config.yaml <-- not currently in use (cloud functions don't liek a nested yaml file)
-#
-#
-gcloud functions deploy rainday-gameday-getuserforecasts --runtime=python311 --service-account=eh-rainday-gameday@appspot.gserviceaccount.com --region=us-east1 --source=./ --entry-point=main --trigger-http --no-allow-unauthenticated
+# --source: Source should point to a directory, not necessarily a file name (necessarily)
+# --entry-point -- the function that should be run (usually main() or equivalent)
+# --stage-bucket=rainday-gameday -- doesn't seem necessary
+# --env-vars-file -- Possible to use .env here?
+# --service-account=eh-rainday-gameday@appspot.gserviceaccount.com   
+# --env-var=RAINDAY_IN_CLOUD_ENVIRONMENT
+gcloud functions deploy rainday-gameday_get-union-and-store-forecasts --project=eh-rainday-gameday --set-env-vars RAINDAY_IN_CLOUD_ENVIRONMENT=yes --runtime=python311 --region=us-east1 --source=./ --entry-point=main --trigger-http --no-allow-unauthenticated

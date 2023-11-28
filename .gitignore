@@ -185,3 +185,6 @@ unioned_forecasts.xlsx
 unioned_dfs.csv
 unioned_dfs.xlsx
 analysis/historic_forecasts.twbx
+data/weather-forecast_csv/5-day_forecast.csv
+config/eh-rainday-gameday-a3f1e1e84c94.json
+rainday-gameday-forecasts.code-workspace

@@ -3,20 +3,21 @@
 
 #external imports
 import os
-from dotenv import load_dotenv
 
 #bot specific imports
 import discord
 from discord.ext import commands
 
+from classes.ConfigManagerClass import ConfigManager
+
+config = ConfigManager(yaml_filepath='config', yaml_filename='config.yaml')
+
 #load_yaml() 
 from modules import load_yaml, load_env
-yaml_data = load_yaml(yaml_filename = 'config.yaml',
-                      yaml_dirname = 'C:\\Users\\erich\\OneDrive\\Desktop\\_work\\__repos\\rainday-gameday-forecasts')
 
 #load_envrionment()
-load_env(env_filename=yaml_data['envfile_name'], 
-         env_dirname=yaml_data['env_filedir'])
+load_env(env_filename=config.env_filename, 
+         env_dirname=config.env_filedir)
 DISCORD_BOT_TOKEN=os.getenv('DISCORD_BOT_TOKEN')
 
 # Create the Discord client and add message content intents
