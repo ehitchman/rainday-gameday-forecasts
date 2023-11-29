@@ -21,7 +21,7 @@ class WeatherForecaster():
             logger_name='log_main',
             debug_level=runtime_logger_level,
             stream_logs=True,
-            mode='w'
+            mode='a'
         )
 
     @functions_framework.http
@@ -41,7 +41,6 @@ class WeatherForecaster():
 
         #set/declare variables/objects
         list_of_all_forecast_details_dfs = []
-        list_of_all_users_names = []
 
         # config_users is iterated over to grab a forecast for each user
         config_users = self.config.users_details
@@ -52,7 +51,7 @@ class WeatherForecaster():
             user_lat = user['lat'] 
             user_lon = user['lon'] 
             user_cityprovince = user['city-province'] 
-            print(f"{user_name}, {user_cityprovince} ({user_lat}, {user_lon})")
+            self.logger.info(f"{user_name}, {user_cityprovince} ({user_lat}, {user_lon})")
 
             #Takes users details from the yaml and gets a forecast 
             json_forecast = self.forecast_manager.getWeatherForecast(
@@ -61,13 +60,11 @@ class WeatherForecaster():
                 lat = user_lat,
                 write_to_directory=False
                 )
-
-            print("THIS IS THE JSON_FORECAST:")
-            print(json_forecast)
+            
             #Transforms the forecast from forecast_manager.getWeatherForecast() to a usable format for
             # caompring dates/times/weather conditions
             json_forecast_details = self.forecast_manager.transformJsonForecast( 
-                json_forecast, 
+                json_forecast
                 )
             
             #upload INDIVIDUAL forecast to GCS
@@ -78,12 +75,18 @@ class WeatherForecaster():
             
             #append df to new all forecasts list item and users name list item
             list_of_all_forecast_details_dfs.append(json_forecast_details)
-            list_of_all_users_names.append(user_name)
 
         ############################################################################
         ############################################################################
         #concatenate the list of DFs to a single DF for use in analysis/viz layer
         forecasts_details_concat = pd.concat(list_of_all_forecast_details_dfs)
+
+        self.logger.info("-----------------------")
+        self.logger.info("-----------------------")
+        self.logger.info("THIS IS THE forecasts_details_concat:")            
+        self.logger.info(forecasts_details_concat)
+        self.logger.info("-----------------------")
+        self.logger.info("-----------------------")
 
         #upload to GCS
         self.gcs_manager.write_df_to_gcs(df=forecasts_details_concat, 
@@ -98,7 +101,10 @@ class WeatherForecaster():
 
 
     @functions_framework.http
-    def union_and_write_gcs_blob_forecasts_to_gcs(self, request=None, is_testing_run=False):
+    def union_and_write_gcs_blob_forecasts_to_gcs(
+        self, 
+        request=None
+        ):
         """
         A Cloud Function that unions multiple CSV files from a Google Cloud Storage (GCS) bucket
         and writes the combined result to another GCS blob.
@@ -127,8 +133,7 @@ class WeatherForecaster():
         blobs_list = self.gcs_manager.list_gcs_blobs(bucket_name=bucket_name)
         unioned_forecasts = self.gcs_manager.union_gcs_csv_blobs(
             blobs_list=blobs_list,
-            csvs_to_union_folder_location=csvs_to_union_folder_location,
-            is_testing_run=False
+            csvs_to_union_folder_location=csvs_to_union_folder_location
             )
 
         # Write the unioned forecasts to GCS
@@ -160,4 +165,3 @@ def main(request=None):
 if __name__ == '__main__':
     return_message = main()
     print(return_message)
-

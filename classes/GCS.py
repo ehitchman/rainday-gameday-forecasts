@@ -17,9 +17,9 @@ class GCSManager:
         self.config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
         self.logging_manager = LoggingManager()
         self.logger = self.logging_manager.create_logger(
-            logger_name='log_ConfigManagerClass', 
+            logger_name='log_GCS', 
             debug_level=runtime_logger_level,
-            mode='w',
+            mode='a',
             stream_logs=True,
             encoding='UTF-8'
             )
@@ -33,10 +33,51 @@ class GCSManager:
         
         #List blobs in bucket
         # for blob in blobs_list:
-        #     print(blob.name)
-        print('func list_gcs_blobs: finished')
+        #     self.logger.info(blob.name)
+        self.logger.info('func list_gcs_blobs: finished')
         return blobs_list
-    
+
+    #Writes dataframe to specified bucket/path
+    def write_df_to_gcs(self,
+                        df, 
+                        gcs_bucketname = 'your_bucket_name', 
+                        gcs_bucket_filepath = 'your/buckjet/filepath.csv', 
+                        is_testing_run=False):
+
+        if is_testing_run == True:
+            df = pd.DataFrame(data=[[1,2,3],[4,5,6]],columns=['a','b','c'])
+            df.to_csv(file_object, index=False)
+        
+        bucket_object = self.gcs_client.get_bucket(gcs_bucketname)
+        fileblob_object = bucket_object.blob(gcs_bucket_filepath)
+        file_object = io.StringIO()
+        file_object.seek(0)
+        fileblob_object.upload_from_string(file_object.read(), content_type="text/csv")
+        file_object.close()
+
+        message = f"func write_df_to_gcs: finished\n  -Wrote to {gcs_bucketname} at location {gcs_bucket_filepath}"     
+        return(message)
+
+    # Union blobs 
+    def union_gcs_csv_blobs(self,
+                            blobs_list, 
+                            csvs_to_union_folder_location='',
+                            is_testing_run=False):
+        dfs = []
+                
+        for blob in blobs_list:
+            if blob.name.startswith(csvs_to_union_folder_location) and blob.name.endswith('.csv') and not blob.name.endswith('/'):
+                csv_content = io.StringIO() 
+                csv_content.write(blob.download_as_text())
+                csv_content.seek(0)
+                df = pd.read_csv(csv_content)
+                dfs.append(df)
+
+        unioned_dfs = pd.concat(dfs, ignore_index=True) #ignore_indexadded 07-17
+
+        print('func union_gcs_csv_blobs: finished')
+        return unioned_dfs
+
     #Creates big query table from GCS blob
     def create_bq_table_from_gcs(self,
                             project_name = 'your-project-name', 
@@ -101,14 +142,14 @@ class GCSManager:
         # Check if the table already exists.
         try:
             self.bq_client.get_table(table_ref)
-            print(f"Table {table_fullqual} already exists.")
+            self.logger.info(f"Table {table_fullqual} already exists.")
         except NotFound:
-            print(f"Table {table_fullqual} is not found.\n Creating new table")
+            self.logger.info(f"Table {table_fullqual} is not found.\n Creating new table")
 
             # Use the client to create a new table.
             table = bigquery.Table(table_ref, schema=schema)
             table = self.bq_client.create_table(table)  # Make an API request.
-            print(f"Table {table_fullqual} created.")
+            self.logger.info(f"Table {table_fullqual} created.")
 
         # Configure the external data source and start the BigQuery Load job.
         job_config = bigquery.LoadJobConfig(
@@ -121,8 +162,8 @@ class GCSManager:
 
         # Wait for the job to complete.
         load_job_result = load_job.result()
-        print(load_job_result)
-        return print(load_job_result)
+        self.logger.info(load_job_result)
+        return self.logger.info(load_job_result)
 
     #Reads GCS blob and writes to local file
     #TODO: NOT WORKING
@@ -154,44 +195,22 @@ class GCSManager:
         if 'a' != 'a':
             message = ''
         else:
-            message = f"Retrieved {bucket_name} at location {gcs_bucket_blobdir} to dataframe" 
+            message = f"Retrieved {self.config.gcs_bucketname} at location {gcs_bucket_blobdir} to dataframe" 
         print(message)
         return(df)
 
     #TODO: upload updated config located in root directory (move to different location?)
-    def upload_config_to_gcs_xlsx(self,
-                                bucket_name='your_bucket_name',
-                                gcs_bucket_blobpath='your/bucket/blobpath.xlsx',
-                                is_testing_run=False):
-        bucket_object = self.gcs_client.get_bucket(bucket_name)
+    def upload_config_to_gcs_xlsx(
+            self,
+            gcs_bucket_blobpath='your/bucket/blobpath.xlsx',
+            is_testing_run=False
+            ):
+        bucket_object = self.gcs_client.get_bucket(self.config.gcs_bucketname)
         print('TODO: incomplete, currently uploading manually')
         return()
         #EoF
 
-    # Union blobs 
-    def union_gcs_csv_blobs(self,
-                            blobs_list, 
-                            csvs_to_union_folder_location='',
-                            is_testing_run=False):
-        dfs = []
-        csv_content = io.StringIO()
-        
-        for blob in blobs_list:
-            if blob.name.startswith(csvs_to_union_folder_location) and blob.name.endswith('.csv') and not blob.name.endswith('/'):
-                #write blob string content to StringIO object 
-                csv_content.write(blob.download_as_text())
-                csv_content.seek(0)
 
-                # Convert to df and append
-                df = pd.read_csv(csv_content)
-                dfs.append(df)
-
-        # Union all DataFrames
-        unioned_dfs = pd.concat(dfs, ignore_index=True) #ignore_indexadded 07-17
-
-        # Finished
-        print('func union_gcs_csv_blobs: finished')
-        return unioned_dfs
 
     #Writes dataframe to specified bucket/path
     def write_df_to_gcs(self,
@@ -228,7 +247,7 @@ class GCSManager:
     
 def main():
     gcs_manager = GCSManager()
-    gcs_blobs_list = gcs_manager.list_gcs_blobs(bucket_name='rainday-gameday-bucket')
+    gcs_blobs_list = gcs_manager.list_gcs_blobs(gcs_bucketname='rainday-gameday-bucket')
     return gcs_blobs_list
 
 if __name__ == '__main__':
