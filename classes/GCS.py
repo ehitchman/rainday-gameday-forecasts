@@ -8,7 +8,6 @@ from google.cloud.exceptions import NotFound
 
 from classes.LoggingClass import LoggingManager
 from classes.ConfigManagerClass import ConfigManager
-from modules.utils import write_to_csv_and_xlsx
 
 runtime_logger_level = 'DEBUG'
 

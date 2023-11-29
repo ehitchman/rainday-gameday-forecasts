@@ -8,8 +8,6 @@ from classes.LoggingClass import LoggingManager
 from classes.GCS import GCSManager
 from classes.OpenWeatherMap import OpenWeatherMapForecasts
 
-from modules.utils import write_to_csv_and_xlsx
-
 #os.environ['RAINDAY_IN_CLOUD_ENVIRONMENT'] = 'yes'
 runtime_logger_level = 'DEBUG'
 
