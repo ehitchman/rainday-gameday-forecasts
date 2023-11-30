@@ -1,12 +1,13 @@
 import functions_framework
 import pandas as pd
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from classes.ConfigManagerClass import ConfigManager
 from classes.LoggingClass import LoggingManager
 from classes.GCS import GCSManager
-from classes.OpenWeatherMap import OpenWeatherMapForecasts
+from classes.OpenWeatherMap import WeatherForecastRetriever
+
 
 #os.environ['RAINDAY_IN_CLOUD_ENVIRONMENT'] = 'yes'
 runtime_logger_level = 'DEBUG'
@@ -14,7 +15,7 @@ runtime_logger_level = 'DEBUG'
 class WeatherForecaster():
     def __init__(self):
         self.config = ConfigManager(yaml_filename = 'config.yaml', yaml_filepath = 'config')
-        self.forecast_manager = OpenWeatherMapForecasts()
+        self.forecast_manager = WeatherForecastRetriever()
         self.gcs_manager = GCSManager()
         self.logging_manager = LoggingManager() 
         self.logger = self.logging_manager.create_logger(
@@ -76,8 +77,6 @@ class WeatherForecaster():
             #append df to new all forecasts list item and users name list item
             list_of_all_forecast_details_dfs.append(json_forecast_details)
 
-        ############################################################################
-        ############################################################################
         #concatenate the list of DFs to a single DF for use in analysis/viz layer
         forecasts_details_concat = pd.concat(list_of_all_forecast_details_dfs)
 
@@ -94,9 +93,6 @@ class WeatherForecaster():
                         gcs_bucket_filepath=gcs_file_path, 
                         is_testing_run=False)
 
-        #list GCS blobs
-        #self.gcs_manager.list_gcs_blobs(bucket_name=bucket_name)
-        
         return(f"FINISHED: The list of forecasts has been saved to GCS bucket: {bucket_name} in location: {gcs_file_path}")
 
 
@@ -124,11 +120,8 @@ class WeatherForecaster():
         # Define the GCS bucket and file information
         bucket_name = self.config.bucket_name
 
-        ############################################################################
-        ############################################################################
         # Get all historic daily CSV files from the bucket and union them together
-        #  - directory should contain multiple files, each one containing a single
-        # forecast containing multiple forecast times and users
+        #  - directory should contain multiple files
         csvs_to_union_folder_location = self.config.forecast_csvpath    
         blobs_list = self.gcs_manager.list_gcs_blobs(bucket_name=bucket_name)
         unioned_forecasts = self.gcs_manager.union_gcs_csv_blobs(
@@ -136,9 +129,8 @@ class WeatherForecaster():
             csvs_to_union_folder_location=csvs_to_union_folder_location
             )
 
-        # Write the unioned forecasts to GCS
-        #This is the scripts output, the final unioned forecast.  The file will
-        # contain a row for every forecast_date_capture, forecast_time, user   
+        # Write the unioned forecasts to GCS. File will contain a row for every 
+        # forecast_date_capture, forecast_time, user   
         gcs_file_name = 'all_historic_forecasts.csv' 
         gcs_forecasthistory_bucket_directory = self.config.forecast_unioned_csvpath
         gcs_forecasthistory_filepath = os.path.join(
@@ -151,9 +143,8 @@ class WeatherForecaster():
             gcs_bucket_filepath=gcs_forecasthistory_filepath,
             is_testing_run=False
             )
-
         return print(f"FINISHED: The combined/unioned forecasts have been saved to GCS bucket: {bucket_name} in location: {gcs_forecasthistory_filepath}")
-
+     
 #entry point for gcf
 @functions_framework.http
 def main(request=None): 
