@@ -40,7 +40,7 @@ class GCSManager:
     #Writes dataframe to specified bucket/path
     def write_df_to_gcs(self,
                         df, 
-                        gcs_bucketname = 'your_bucket_name', 
+                        bucket_name = 'your_bucket_name', 
                         gcs_bucket_filepath = 'your/buckjet/filepath.csv', 
                         is_testing_run=False):
 
@@ -48,14 +48,14 @@ class GCSManager:
             df = pd.DataFrame(data=[[1,2,3],[4,5,6]],columns=['a','b','c'])
             df.to_csv(file_object, index=False)
         
-        bucket_object = self.gcs_client.get_bucket(gcs_bucketname)
+        bucket_object = self.gcs_client.get_bucket(bucket_name)
         fileblob_object = bucket_object.blob(gcs_bucket_filepath)
         file_object = io.StringIO()
         file_object.seek(0)
         fileblob_object.upload_from_string(file_object.read(), content_type="text/csv")
         file_object.close()
 
-        message = f"func write_df_to_gcs: finished\n  -Wrote to {gcs_bucketname} at location {gcs_bucket_filepath}"     
+        message = f"func write_df_to_gcs: finished\n  -Wrote to {bucket_name} at location {gcs_bucket_filepath}"     
         return(message)
 
     # Union blobs 
