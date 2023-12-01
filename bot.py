@@ -12,12 +12,6 @@ from classes.ConfigManagerClass import ConfigManager
 
 config = ConfigManager(yaml_filepath='config', yaml_filename='config.yaml')
 
-#load_yaml() 
-from modules import load_yaml, load_env
-
-#load_envrionment()
-load_env(env_filename=config.env_filename, 
-         env_dirname=config.env_filedir)
 DISCORD_BOT_TOKEN=os.getenv('DISCORD_BOT_TOKEN')
 
 # Create the Discord client and add message content intents
@@ -30,12 +24,13 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 async def raindaygameday(ctx):
 
     # #import and main python module and functions
-    from modules import getRaindayGamedayOptions
+    from classes.OpenWeatherMap import OpenWeatherMapForecasts
 
+    owm = OpenWeatherMapForecasts()
     # returns dictionary of n objects
     #  1. 'dates_and_times_df -- data frame of available times for gaming
     #  2. 'users_names_list' -- list of users included in the forecast comparison (from config.yml['users_details'] entry)
-    finaldictionary = getRaindayGamedayOptions()
+    finaldictionary = owm.getRaindayGamedayOptions()
 
     #Get dates for use in message from bot in printer friendly concatenation of dates/times
     list_of_dates_and_times = finaldictionary['dates_and_times_df'] #df object in top level of dictionary
