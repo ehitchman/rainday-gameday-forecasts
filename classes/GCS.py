@@ -9,7 +9,7 @@ from google.cloud.exceptions import NotFound
 from classes.LoggingClass import LoggingManager
 from classes.ConfigManagerClass import ConfigManager
 
-runtime_logger_level = 'DEBUG'
+runtime_logger_level = 'INFO'
 
 class GCSManager:
 
@@ -30,52 +30,65 @@ class GCSManager:
     def list_gcs_blobs(self, bucket_name = 'rainday-gameday-bucket'):
         blobs = self.gcs_client.list_blobs(bucket_name)
         blobs_list = list(blobs)
-        
-        #List blobs in bucket
-        # for blob in blobs_list:
-        #     self.logger.info(blob.name)
         self.logger.info('func list_gcs_blobs: finished')
         return blobs_list
 
-    #Writes dataframe to specified bucket/path
-    def write_df_to_gcs(self,
-                        df, 
-                        bucket_name = 'your_bucket_name', 
-                        gcs_bucket_filepath = 'your/buckjet/filepath.csv', 
-                        is_testing_run=False):
+    # # Writes dataframe to specified bucket/path
+    # def write_df_to_gcs(self,
+    #                     df, 
+    #                     bucket_name = 'your_bucket_name', 
+    #                     gcs_bucket_filepath = 'your/buckjet/filepath.csv', 
+    #                     is_testing_run=False):
 
-        if is_testing_run == True:
-            df = pd.DataFrame(data=[[1,2,3],[4,5,6]],columns=['a','b','c'])
-            df.to_csv(file_object, index=False)
+    #     if is_testing_run == True:
+    #         df = pd.DataFrame(data=[[1,2,3],[4,5,6]],columns=['a','b','c'])
+    #         df.to_csv(file_object, index=False)
         
-        bucket_object = self.gcs_client.get_bucket(bucket_name)
-        fileblob_object = bucket_object.blob(gcs_bucket_filepath)
-        file_object = io.StringIO()
-        file_object.seek(0)
-        fileblob_object.upload_from_string(file_object.read(), content_type="text/csv")
-        file_object.close()
+    #     bucket_object = self.gcs_client.get_bucket(bucket_name)
+    #     fileblob_object = bucket_object.blob(gcs_bucket_filepath)
+    #     file_object = io.StringIO()
+    #     file_object.seek(0)
+    #     fileblob_object.upload_from_string(file_object.read(), content_type="text/csv")
+    #     file_object.close()
 
-        message = f"func write_df_to_gcs: finished\n  -Wrote to {bucket_name} at location {gcs_bucket_filepath}"     
-        return(message)
+    #     message = f"func write_df_to_gcs: finished\n  -Wrote to {bucket_name} at location {gcs_bucket_filepath}"     
+    #     return(message)
 
     # Union blobs 
-    def union_gcs_csv_blobs(self,
-                            blobs_list, 
-                            csvs_to_union_folder_location='',
-                            is_testing_run=False):
-        dfs = []
-                
+    def union_gcs_csv_blobs(
+            self,
+            blobs_list, 
+            csvs_to_union_folder_location=''
+            ):
+        dfs = [] 
+        self.logger.info("started union_gcs_csv_blobs")
+        self.logger.info(f"This is the csvs_to_union_folder_location: {csvs_to_union_folder_location}")
+        self.logger.debug("This is the blobslist:")
+        self.logger.debug(blobs_list)
+
         for blob in blobs_list:
+            self.logger.debug("This is the blob")
+            self.logger.debug(blob)
+            
             if blob.name.startswith(csvs_to_union_folder_location) and blob.name.endswith('.csv') and not blob.name.endswith('/'):
                 csv_content = io.StringIO() 
                 csv_content.write(blob.download_as_text())
                 csv_content.seek(0)
                 df = pd.read_csv(csv_content)
+                
+                self.logger.debug("THIS IS THE df INSIDE OF union_gcs_csv_blobs loop:")
+                self.logger.debug(df)
+                
                 dfs.append(df)
 
-        unioned_dfs = pd.concat(dfs, ignore_index=True) #ignore_indexadded 07-17
+                self.logger.debug("THIS IS THE dfs INSIDE OF union_gcs_csv_blobs loop:")
+                self.logger.debug(dfs)
 
-        print('func union_gcs_csv_blobs: finished')
+        unioned_dfs = pd.concat(dfs, ignore_index=True)
+        self.logger.info("This is the FINAL df")
+        self.logger.info(unioned_dfs.head(5))
+
+        self.logger.info('func union_gcs_csv_blobs: finished')
         return unioned_dfs
 
     #Creates big query table from GCS blob
@@ -104,15 +117,6 @@ class GCSManager:
         - BigQuery Python Client Library: https://cloud.google.com/bigquery/docs/reference/libraries#client-libraries-usage-python
         - Google Cloud Storage: https://cloud.google.com/storage
         """
-
-        # TESTING
-        #is_testing_run = True
-        if is_testing_run == True:
-            project_name = 'eh-rainday-gameday'   
-            bucket_name = 'rainday-gameday-bucket'
-            dataset_name = 'models_forecast' 
-            target_table_name = 'forecast_history_all_users'
-            source_file_path = 'forecast_history_csv/all_historic_forecasts.csv'
 
         # Define the GCS URI.
         uri = "gs://{}/{}".format(bucket_name, source_file_path)
@@ -208,9 +212,6 @@ class GCSManager:
         bucket_object = self.gcs_client.get_bucket(self.config.gcs_bucketname)
         print('TODO: incomplete, currently uploading manually')
         return()
-        #EoF
-
-
 
     #Writes dataframe to specified bucket/path
     def write_df_to_gcs(self,
@@ -220,7 +221,6 @@ class GCSManager:
                         is_testing_run=False):
 
         if is_testing_run == True:
-            #simple dataframe
             df = pd.DataFrame(data=[[1,2,3],[4,5,6]],columns=['a','b','c'])
 
         # get the bucket that the file will be uploaded to.
@@ -242,7 +242,7 @@ class GCSManager:
         if 'a' != 'a':
             message = ''
         else:
-            message = f"func write_df_to_gcs: finished\n  -Wrote to {bucket_name} at location {gcs_bucket_filepath}"     
+            message = f"func write_df_to_gcs: finished\n  - Wrote to {bucket_name} at location {gcs_bucket_filepath}"     
         return(message)
     
 def main():

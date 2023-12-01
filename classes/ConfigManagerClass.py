@@ -55,19 +55,22 @@ class ConfigManager:
         self.gcs_credential_filepath = yaml_config.get('gcs_credential_filepath')
 
         self.response_file_name = yaml_config.get('response_file_name', 'response')
-        self.forecast_csvpath = yaml_config.get('5dayforecast_csvpath', 'weather_forecast_csv/5-day forecast')
-        self.individual_forecast_csvpath = yaml_config.get('5dayforecast_individual_csvpath', 'weather_forecast_csv/most_recent_individual_forecasts/5-day forecast')
+        self.wthr_forecast_csvpath = yaml_config.get('wthr_forecast_csvpath', '')
+        self.wthr_forecast_individual_csvpath = yaml_config.get('wthr_forecast_individual_csvpath', 'weather_forecast_csv/most_recent_individual_forecasts/5-day forecast')
+        self.wunderground_weatherhistory_filepath = yaml_config.get('wunderground_weatherhistory_filepath')
         self.wthr_historic_unioned_csvpath = yaml_config.get('wthr_historic_unioned_csvpath')
-        
+        self.wthr_historic_csvpath = yaml_config.get('wthr_historic_csvpath')
+                
         #Users details: dict data type
         self.users_details = yaml_config.get('users_details', [])
 
         # GCS
         self.forecast_unioned_csvpath = yaml_config.get('forecast_unioned_csvpath')
-        
+
 def main():
     config_manager = ConfigManager(yaml_filepath='config', yaml_filename='config.yaml')
     return config_manager
+
 if __name__ == "__main__":
     config_manager = main()
-    print(f"config_manager.openweathermap_api_key:{os.getenv('OPENWEATHERMAP_API_KEY')}")
+    print("Use config_manager.primary_logging_folder to test config managers presenece")

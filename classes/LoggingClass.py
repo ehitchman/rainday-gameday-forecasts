@@ -8,7 +8,6 @@ from classes.ConfigManagerClass import ConfigManager
 class LoggingManager():
     def __init__(self):
         self.config = ConfigManager(yaml_filepath='config', yaml_filename='config.yaml')
-        self.primary_logging_folder = self.config.primary_logging_folder
     def create_logger(
             self,
             logger_name='unset_logname', 
@@ -40,7 +39,7 @@ class LoggingManager():
 
         formatter = logging.Formatter('%(asctime)s - %(module)s - %(levelname)s - Name: %(funcName)s - Line: %(lineno)d - %(message)s')
 
-        filehandler_filepath = os.path.join(self.primary_logging_folder, f'{logger_name}.log' )
+        filehandler_filepath = os.path.join(self.config.primary_logging_folder, f'{logger_name}.log' )
         file_handler = logging.FileHandler(filehandler_filepath, mode=mode, encoding=encoding)
 
 
@@ -119,5 +118,8 @@ def main():
         )
     logger.info("This is a test log...")
     return logger
+
 if __name__ == '__main__':
+    logging_manager = LoggingManager()
     logger = main()
+    logger.info("this is a log in __main__")
