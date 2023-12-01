@@ -7,6 +7,7 @@ from classes.ConfigManagerClass import ConfigManager
 from classes.LoggingClass import LoggingManager
 from classes.GCS import GCSManager
 from classes.OpenWeatherMap import WeatherForecastRetriever
+from classes.OpenMeteoWeatherClass import WeatherHistoryRetriever
 
 
 #os.environ['RAINDAY_IN_CLOUD_ENVIRONMENT'] = 'yes'
@@ -145,14 +146,45 @@ class WeatherForecaster():
             )
         return print(f"FINISHED: The combined/unioned forecasts have been saved to GCS bucket: {bucket_name} in location: {gcs_forecasthistory_filepath}")
      
-#entry point for gcf
+#entry point for rainday-gameday_get-union-and-store-forecasts
 @functions_framework.http
 def main(request=None): 
     forecaster = WeatherForecaster()
     forecaster.get_weather_forecast_and_write_to_gcs()
     forecaster.union_and_write_gcs_blob_forecasts_to_gcs()
-    message = "FINAL: Looks like the main function ran without issue!"
+    message = "FINAL: Looks like the main() function ran without issue!"
     return message
+
+#entry point for rainday-gameday_get-historic-openmeteo-weather
+@functions_framework.http
+def get_historic_weather():
+    config = ConfigManager(yaml_filepath='config', yaml_filename='config.yaml')
+    wthr_history_retriever = WeatherHistoryRetriever()
+
+    users_details = config.users_details
+
+    dfs = []
+
+    six_days_ago = (datetime.now() - timedelta(days=6)).strftime('%Y-%m-%d')
+    start_date = six_days_ago
+    end_date = six_days_ago
+
+    for user in users_details:
+        name = user['name']
+        lat = user['lat']
+        lon = user['lon']
+        print(f"Fetching data for {name}...")
+        df = wthr_history_retriever.fetch_and_process(lat, lon, start_date, end_date, name)
+        dfs.append(df)
+
+    df_unioned = pd.concat(dfs, ignore_index=True)
+
+    result =wthr_history_retriever.send_df_to_bq(df_union=df_unioned)
+ 
+    return result
+
 if __name__ == '__main__':
-    return_message = main()
-    print(return_message)
+    print("Tests included in main.py, however only run this command if you're certain you'd like to overwrite the forecast that may have been scheduled for first thing this morning")
+    #config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
+    #return_message_get_weather_forecast = main()
+    #print(return_message_get_weather_forecast)

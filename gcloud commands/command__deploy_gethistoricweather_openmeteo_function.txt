@@ -1,0 +1,8 @@
+###Execute in gcloud shell after gcloud init
+# --source: Source should point to a directory, not necessarily a file name (necessarily)
+# --entry-point -- the function that should be run (usually main() or equivalent)
+# --stage-bucket=rainday-gameday -- doesn't seem necessary
+# --env-vars-file -- Possible to use .env here?
+# --service-account=eh-rainday-gameday@appspot.gserviceaccount.com   
+# --env-var=RAINDAY_IN_CLOUD_ENVIRONMENT
+gcloud functions deploy rainday-gameday_get-historic-openmeteo-weather --project=eh-rainday-gameday --set-env-vars RAINDAY_IN_CLOUD_ENVIRONMENT=yes --runtime=python311 --region=us-east1 --source=./ --entry-point=get_historic_weather --trigger-http --allow-unauthenticated

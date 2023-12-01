@@ -57,8 +57,8 @@ class ConfigManager:
         self.response_file_name = yaml_config.get('response_file_name', 'response')
         self.forecast_csvpath = yaml_config.get('5dayforecast_csvpath', 'weather_forecast_csv/5-day forecast')
         self.individual_forecast_csvpath = yaml_config.get('5dayforecast_individual_csvpath', 'weather_forecast_csv/most_recent_individual_forecasts/5-day forecast')
-
-
+        self.wthr_historic_unioned_csvpath = yaml_config.get('wthr_historic_unioned_csvpath')
+        
         #Users details: dict data type
         self.users_details = yaml_config.get('users_details', [])
 
