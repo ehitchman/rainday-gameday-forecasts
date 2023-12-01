@@ -188,3 +188,5 @@ analysis/historic_forecasts.twbx
 data/weather-forecast_csv/5-day_forecast.csv
 config/eh-rainday-gameday-a3f1e1e84c94.json
 rainday-gameday-forecasts.code-workspace
+data/from bq/weather_forecast_csv_5-day_forecasts_all_all_historic_forecasts.csv
+data/wunderground-weatherhistory_xlsx/wunderground-weatherhistory.xlsx
