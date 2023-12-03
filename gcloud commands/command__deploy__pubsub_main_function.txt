@@ -5,4 +5,4 @@
 # --env-vars-file -- Possible to use .env here?
 # --service-account=eh-rainday-gameday@appspot.gserviceaccount.com   
 # --env-var=RAINDAY_IN_CLOUD_ENVIRONMENT
-gcloud functions deploy rainday-gameday_transform-historic-openmeteo-weather --project=eh-rainday-gameday --set-env-vars RAINDAY_IN_CLOUD_ENVIRONMENT=yes --runtime=python311 --region=us-east1 --source=./ --entry-point=transform_historic_weather --trigger-http --allow-unauthenticated
+gcloud functions deploy pubsub_test --project=eh-rainday-gameday --set-env-vars RAINDAY_IN_CLOUD_ENVIRONMENT=yes --runtime=python311 --region=us-east1 --source=./ --entry-point=pubsub_main --trigger-topic=test_topic_1 --allow-unauthenticated

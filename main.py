@@ -2,12 +2,15 @@ import functions_framework
 import pandas as pd
 import os
 from datetime import datetime, timedelta
+import base64
+import json
 
 from classes.ConfigManagerClass import ConfigManager
 from classes.LoggingClass import LoggingManager
 from classes.GCS import GCSManager
 from classes.OpenWeatherMap import WeatherForecastRetriever
 from classes.OpenMeteoWeatherClass import WeatherHistoryRetriever
+from classes.PubSub import PubSubManager
 
 #os.environ['RAINDAY_IN_CLOUD_ENVIRONMENT'] = 'yes'
 runtime_logger_level = 'DEBUG'
@@ -173,49 +176,96 @@ def get_historic_weather(request=None):
     start_date = six_days_ago
     end_date = six_days_ago
     users_details = config.users_details
-    for user in users_details:
-        name = user['name']
-        lat = user['lat']
-        lon = user['lon']
-        print(f"Fetching data for {name}...")
-        df = wthr_history_retriever.fetch_and_process(lat, lon, start_date, end_date, name)
-        dfs.append(df)
-    df_unioned = pd.concat(dfs, ignore_index=True)
 
-    # Write daily historic wthr to GCS 
-    gcs_filepath = config.wthr_historic_csvpath+f'_{six_days_ago}.csv'
-    result = gcs_manager.write_df_to_gcs(
-        df=df_unioned,
-        bucket_name=config.bucket_name,
-        gcs_bucket_filepath=gcs_filepath
-    )
+    try:
+        for user in users_details:
+            name = user['name']
+            lat = user['lat']
+            lon = user['lon']
+            print(f"Fetching data for {name}...")
+            df = wthr_history_retriever.fetch_and_process(lat, lon, start_date, end_date, name)
+            dfs.append(df)
+        df_unioned = pd.concat(dfs, ignore_index=True)
+
+        # Write daily historic wthr to GCS 
+        gcs_filepath = config.wthr_historic_csvpath+f'_{six_days_ago}.csv'
+        result = gcs_manager.write_df_to_gcs(
+            df=df_unioned,
+            bucket_name=config.bucket_name,
+            gcs_bucket_filepath=gcs_filepath
+        )
+        outcome='complete'
+    except:
+        outcome='failed'
+
+    # Create publisher, publsih topic data
+    data_bytestr = outcome.encode("utf-8")
+    publisher = PubSubManager(config.pubsub_project_id, topic_id='get_historic_weather')
+    publisher.publish_topic_data(data_bytestr=data_bytestr)
 
     return result
 
-@functions_framework.http
-def transform_historic_weather(request=None):
+@functions_framework.cloud_event
+def transform_historic_weather(cloud_event=None):
+    # Initialize configuration and Google Cloud Storage Manager
     config = ConfigManager(yaml_filepath='config', yaml_filename='config.yaml')
     gcs_manager = GCSManager()
 
-    logger.info("starting transform_historic_weather:")
+    # Logging the paths for reference
+    logger.info("Starting transform_historic_weather:")
     logger.info(f"The read path for unioning, config.wthr_historic_csvpath: {config.wthr_historic_csvpath}")
     logger.info(f"The write path, config.wthr_historic_unioned_csvpath: {config.wthr_historic_unioned_csvpath}")
 
-    # Get daily historic wthr from GCS and union them
-    blobs_list = gcs_manager.list_gcs_blobs(bucket_name=config.bucket_name)
-    whtr_historic_unioned = gcs_manager.union_gcs_csv_blobs(
-            blobs_list=blobs_list,
-            csvs_to_union_folder_location=config.wthr_historic_csvpath
+    # Simulating a Pub/Sub message for local testing
+    if cloud_event is None:
+        logger.info("Running locally, simulating cloud_event for testing.")
+        test_message = json.dumps({'completion_status': 'local_run'}).encode('utf-8')
+        test_message_data = base64.b64encode(test_message).decode('utf-8')
+        cloud_event = type('test', (object,), {})()  # Creating a mock object
+        cloud_event.data = {'message': {'data': test_message_data}}
+
+    # Check if cloud_event has data and a message]
+    if cloud_event.data and "message" in cloud_event.data:
+        # Decode the base64-encoded message data
+        message_data = base64.b64decode(cloud_event.data["message"]["data"]).decode("utf-8")
+        logger.info(f"Received message data: {message_data}")
+
+        # Attempt to parse the message data as JSON
+        try:
+            message_json = json.loads(message_data)
+            completion_status = message_json.get('completion_status')
+        except json.JSONDecodeError:
+            logger.error("Error decoding message data as JSON.")
+            return "Error in processing - message data not in JSON format"
+
+        # Process the message if the completion status is 'complete'
+        if completion_status == 'complete':
+            # Get daily historic weather data from GCS and union them
+            blobs_list = gcs_manager.list_gcs_blobs(bucket_name=config.bucket_name)
+            whtr_historic_unioned = gcs_manager.union_gcs_csv_blobs(
+                blobs_list=blobs_list,
+                csvs_to_union_folder_location=config.wthr_historic_csvpath
             )
 
-    # Write unioned daily historic wthr to GCS
-    gcs_filepath = config.wthr_historic_unioned_csvpath+'.csv'
-    message_result = gcs_manager.write_df_to_gcs(
-        df=whtr_historic_unioned,
-        bucket_name=config.bucket_name,
-        gcs_bucket_filepath=gcs_filepath
-    )
-    return message_result
+            # Write unioned daily historic weather data to GCS
+            gcs_filepath = config.wthr_historic_unioned_csvpath + '.csv'
+            message_result = gcs_manager.write_df_to_gcs(
+                df=whtr_historic_unioned,
+                bucket_name=config.bucket_name,
+                gcs_bucket_filepath=gcs_filepath
+            )
+
+            # Return a success message or result
+            return f"Processed successfully: {message_result}"
+        else:
+            # Log and return if the completion status is not 'complete'
+            logger.error("The completion_status was not 'complete'. Function aborted.")
+            return "Aborted: The completion_status was not 'complete'"
+    else:
+        # Log and return an error if no message data is found
+        logger.error("No message data found in the cloud event.")
+        return "Error: No message data found in the cloud event."
+    
 
 if __name__ == '__main__':
     print("Tests included in main.py, however only run these tests if you're certain you'd like to overwrite the forecast that may have been scheduled for first thing this morning")
@@ -223,3 +273,4 @@ if __name__ == '__main__':
     # main()
     # get_historic_weather()
     # transform_historic_weather()
+    #pubsub_main()
