@@ -4,6 +4,7 @@ python-dotenv==1.0.0
 
 google-cloud-storage==2.10.0
 google-cloud-bigquery==3.11.3
+google-cloud-pubsub==2.18.4
 
 openmeteo_requests==1.1.0
 requests_cache==1.1.1
