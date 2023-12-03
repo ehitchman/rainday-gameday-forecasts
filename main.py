@@ -2,12 +2,15 @@ import functions_framework
 import pandas as pd
 import os
 from datetime import datetime, timedelta
+import base64
+import json
 
 from classes.ConfigManagerClass import ConfigManager
 from classes.LoggingClass import LoggingManager
 from classes.GCS import GCSManager
 from classes.OpenWeatherMap import WeatherForecastRetriever
 from classes.OpenMeteoWeatherClass import WeatherHistoryRetriever
+from classes.PubSub import PubSubManager
 
 #os.environ['RAINDAY_IN_CLOUD_ENVIRONMENT'] = 'yes'
 runtime_logger_level = 'DEBUG'
@@ -173,22 +176,32 @@ def get_historic_weather(request=None):
     start_date = six_days_ago
     end_date = six_days_ago
     users_details = config.users_details
-    for user in users_details:
-        name = user['name']
-        lat = user['lat']
-        lon = user['lon']
-        print(f"Fetching data for {name}...")
-        df = wthr_history_retriever.fetch_and_process(lat, lon, start_date, end_date, name)
-        dfs.append(df)
-    df_unioned = pd.concat(dfs, ignore_index=True)
 
-    # Write daily historic wthr to GCS 
-    gcs_filepath = config.wthr_historic_csvpath+f'_{six_days_ago}.csv'
-    result = gcs_manager.write_df_to_gcs(
-        df=df_unioned,
-        bucket_name=config.bucket_name,
-        gcs_bucket_filepath=gcs_filepath
-    )
+    try:
+        for user in users_details:
+            name = user['name']
+            lat = user['lat']
+            lon = user['lon']
+            print(f"Fetching data for {name}...")
+            df = wthr_history_retriever.fetch_and_process(lat, lon, start_date, end_date, name)
+            dfs.append(df)
+        df_unioned = pd.concat(dfs, ignore_index=True)
+
+        # Write daily historic wthr to GCS 
+        gcs_filepath = config.wthr_historic_csvpath+f'_{six_days_ago}.csv'
+        result = gcs_manager.write_df_to_gcs(
+            df=df_unioned,
+            bucket_name=config.bucket_name,
+            gcs_bucket_filepath=gcs_filepath
+        )
+        outcome='complete'
+    except:
+        outcome='failed'
+
+    # Create publisher, publsih topic data
+    data_bytestr = outcome.encode("utf-8")
+    publisher = PubSubManager(config.pubsub_project_id, topic_id='get_historic_weather')
+    publisher.publish_topic_data(data_bytestr=data_bytestr)
 
     return result
 
