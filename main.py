@@ -198,8 +198,12 @@ def get_historic_weather(request=None):
     except:
         outcome='failed'
 
-    # Create publisher, publsih topic data
-    data_bytestr = outcome.encode("utf-8")
+    # Create Pubsub message, create publisher, publsih topic data
+    data_json = {
+            'status': outcome, 
+            'timestamp': datetime.now().strftime("%d-%m-%Y, %H:%M:%S")
+        }
+    data_bytestr = json.dumps(data_json).encode("utf-8")
     publisher = PubSubManager(config.pubsub_project_id, topic_id='get_historic_weather')
     publisher.publish_topic_data(data_bytestr=data_bytestr)
 
@@ -219,26 +223,27 @@ def transform_historic_weather(cloud_event=None):
     # Simulating a Pub/Sub message for local testing
     if cloud_event is None:
         logger.info("Running locally, simulating cloud_event for testing.")
-        test_message = json.dumps({'completion_status': 'local_run'}).encode('utf-8')
-        test_message_data = base64.b64encode(test_message).decode('utf-8')
+        test_data_json = {
+            'status': 'test',
+            'timestamp': datetime.now().strftime("%d-%m-%Y, %H:%M:%S")
+        }
+        test_message_data = json.dumps(test_data_json).encode("utf-8")
+        test_message_data_base64 = base64.b64encode(test_message_data).decode('utf-8')
         cloud_event = type('test', (object,), {})()  # Creating a mock object
-        cloud_event.data = {'message': {'data': test_message_data}}
+        cloud_event.data = {'message': {'data': test_message_data_base64}}
 
-    # Check if cloud_event has data and a message]
+    # Check if cloud_event has data and a message
     if cloud_event.data and "message" in cloud_event.data:
-        # Decode the base64-encoded message data
         message_data = base64.b64decode(cloud_event.data["message"]["data"]).decode("utf-8")
         logger.info(f"Received message data: {message_data}")
 
-        # Attempt to parse the message data as JSON
         try:
             message_json = json.loads(message_data)
-            completion_status = message_json.get('completion_status')
+            completion_status = message_json.get('status')
         except json.JSONDecodeError:
             logger.error("Error decoding message data as JSON.")
             return "Error in processing - message data not in JSON format"
 
-        # Process the message if the completion status is 'complete'
         if completion_status == 'complete':
             # Get daily historic weather data from GCS and union them
             blobs_list = gcs_manager.list_gcs_blobs(bucket_name=config.bucket_name)
@@ -272,5 +277,5 @@ if __name__ == '__main__':
     # config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
     # main()
     # get_historic_weather()
-    # transform_historic_weather()
+    transform_historic_weather()
     #pubsub_main()
