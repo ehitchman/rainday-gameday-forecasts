@@ -28,6 +28,7 @@ class WeatherForecaster():
         self.config = ConfigManager(yaml_filename = 'config.yaml', yaml_filepath = 'config')
         self.forecast_manager = WeatherForecastRetriever()
         self.gcs_manager = GCSManager()
+
         self.logging_manager = LoggingManager() 
         self.logger = self.logging_manager.create_logger(
             logger_name='log_WeatherForecaster',
@@ -210,15 +211,18 @@ def get_historic_weather(request=None):
     return result
 
 @functions_framework.cloud_event
-def transform_historic_weather(cloud_event=None):
+def transform_historic_weather(
+    self,
+    cloud_event=None
+    ):
     # Initialize configuration and Google Cloud Storage Manager
-    config = ConfigManager(yaml_filepath='config', yaml_filename='config.yaml')
-    gcs_manager = GCSManager()
+    # config = ConfigManager(yaml_filepath='config', yaml_filename='config.yaml')
+    # gcs_manager = GCSManager()
 
     # Logging the paths for reference
     logger.info("Starting transform_historic_weather:")
-    logger.info(f"The read path for unioning, config.wthr_historic_csvpath: {config.wthr_historic_csvpath}")
-    logger.info(f"The write path, config.wthr_historic_unioned_csvpath: {config.wthr_historic_unioned_csvpath}")
+    logger.info(f"The read path for unioning, config.wthr_historic_csvpath: {self.config.wthr_historic_csvpath}")
+    logger.info(f"The write path, config.wthr_historic_unioned_csvpath: {self.config.wthr_historic_unioned_csvpath}")
 
     # Simulating a Pub/Sub message for local testing
     if cloud_event is None:
@@ -246,17 +250,17 @@ def transform_historic_weather(cloud_event=None):
 
         if completion_status == 'complete':
             # Get daily historic weather data from GCS and union them
-            blobs_list = gcs_manager.list_gcs_blobs(bucket_name=config.bucket_name)
-            whtr_historic_unioned = gcs_manager.union_gcs_csv_blobs(
+            blobs_list = self.gcs_manager.list_gcs_blobs(bucket_name=self.config.bucket_name)
+            whtr_historic_unioned = self.gcs_manager.union_gcs_csv_blobs(
                 blobs_list=blobs_list,
-                csvs_to_union_folder_location=config.wthr_historic_csvpath
+                csvs_to_union_folder_location=self.config.wthr_historic_csvpath
             )
 
             # Write unioned daily historic weather data to GCS
-            gcs_filepath = config.wthr_historic_unioned_csvpath + '.csv'
-            message_result = gcs_manager.write_df_to_gcs(
+            gcs_filepath = self.config.wthr_historic_unioned_csvpath + '.csv'
+            message_result = self.gcs_manager.write_df_to_gcs(
                 df=whtr_historic_unioned,
-                bucket_name=config.bucket_name,
+                bucket_name=self.config.bucket_name,
                 gcs_bucket_filepath=gcs_filepath
             )
 
@@ -277,5 +281,5 @@ if __name__ == '__main__':
     # config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
     # main()
     # get_historic_weather()
-    transform_historic_weather()
+    # transform_historic_weather()
     #pubsub_main()
