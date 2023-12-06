@@ -11,6 +11,7 @@ from classes.GCS import GCSManager
 from classes.OpenWeatherMap import WeatherForecastRetriever
 from classes.OpenMeteoWeatherClass import WeatherHistoryRetriever
 from classes.PubSub import PubSubManager
+from classes.BigQueryManager import BigQueryManager
 
 #os.environ['RAINDAY_IN_CLOUD_ENVIRONMENT'] = 'yes'
 runtime_logger_level = 'DEBUG'
@@ -274,6 +275,24 @@ def transform_historic_weather(
         # Log and return an error if no message data is found
         logger.error("No message data found in the cloud event.")
         return "Error: No message data found in the cloud event."
+
+@functions_framework.cloud_event
+def create_or_replace_bq_table_from_gcs(
+    self,
+    cloud_event=None
+    ):
+    print("do something...")
+    bq_manager = BigQueryManager()
+    config = ConfigManager()
+    bq_manager.create_or_replace_bq_table_from_gcs(
+        project_name=config.gcp_project_name,
+        source_bucket_name=config.bucket_name,
+        source_dir_path=______,
+        source_file_name=______,
+        target_dataset_name=______,
+        target_table_name=______,
+        schema=
+    )
     
 
 if __name__ == '__main__':

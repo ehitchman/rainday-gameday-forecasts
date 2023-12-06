@@ -51,6 +51,7 @@ class ConfigManager:
             self.primary_logging_folder = yaml_config.get('primary_logging_folder', '/log')
             self.log_responses_directory = yaml_config.get('log_responses_directory', '/log/responses')
 
+        self.gcp_project_name = yaml_config.get('gcp_project_name')
         self.pubsub_project_id = yaml_config.get('pubsub_project_id') 
         self.bucket_name = yaml_config.get('bucket_name', 'default_bucket_name')
         self.gcs_credential_filepath = yaml_config.get('gcs_credential_filepath')
