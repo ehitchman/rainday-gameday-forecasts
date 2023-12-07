@@ -1,31 +1,39 @@
 from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
 
-def get_schemas():
+def get_bq_schemas():
     schema_historic_weather = [
-        bigquery.SchemaField("Posted Date", "STRING"),
-        bigquery.SchemaField("Payee", "STRING"), 
-        bigquery.SchemaField("Address", "STRING"),
-        bigquery.SchemaField("Amount", "STRING"),
-        bigquery.SchemaField("transaction date_year-month", "STRING")       
+        bigquery.SchemaField("forecast_datetime", "DATETIME"),
+        bigquery.SchemaField("temp", "FLOAT"), 
+        bigquery.SchemaField("temp_humidity", "FLOAT"),
+        bigquery.SchemaField("name", "STRING")       
     ]
 
     #"budget_meta.xlsx"
     schema_historic_forecast = [
-        bigquery.SchemaField("description", "STRING"),
-        bigquery.SchemaField("classification1", "STRING"),
-        bigquery.SchemaField("classification2", "STRING"),
-        bigquery.SchemaField("classification3", "STRING"),
-        bigquery.SchemaField("classification4", "STRING"),
-        bigquery.SchemaField("comments", "STRING"),
-        bigquery.SchemaField("filename", "STRING")
-        ]
+        bigquery.SchemaField("capture_date", "DATE"),
+        bigquery.SchemaField("forecast_dateunix", "INTEGER"),
+        bigquery.SchemaField("forecast_datetime", "DATETIME"),
+        bigquery.SchemaField("name", "STRING"),
+        bigquery.SchemaField("rain_category", "STRING"),
+        bigquery.SchemaField("rain_category_value", "INTEGER"),
+        bigquery.SchemaField("temp", "FLOAT"),
+        bigquery.SchemaField("temp_min", "FLOAT"),
+        bigquery.SchemaField("temp_max", "FLOAT"),
+        bigquery.SchemaField("temp_humidity", "INTEGER"),
+        bigquery.SchemaField("weather_description", "STRING")
+    ]
 
     #Schema dictionary for each known budget file
-    schemas = {
+    bq_schemas = {
         'schema_historic_weather': schema_historic_weather,
         'schema_historic_forecast': schema_historic_forecast,
     }
 
     #return schemas in dictionary
-    return schemas
+    return bq_schemas
+
+if __name__ == "__main__":
+    bq_schemas = get_bq_schemas()
+    print(bq_schemas['schema_historic_weather'])
+    

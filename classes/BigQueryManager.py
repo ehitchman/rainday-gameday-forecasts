@@ -7,7 +7,7 @@ runtime_logger_level = 'DEBUG'
 
 class BigQueryManager():
     def __init__(self):
-        self.bq_client = bigquery()
+        self.bq_client = bigquery.Client()
         self.logging_manager = LoggingManager() 
 
         self.logger = self.logging_manager.create_logger(

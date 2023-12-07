@@ -29,6 +29,7 @@ class WeatherForecaster():
         self.config = ConfigManager(yaml_filename = 'config.yaml', yaml_filepath = 'config')
         self.forecast_manager = WeatherForecastRetriever()
         self.gcs_manager = GCSManager()
+        self.bq_manager = BigQueryManager()
 
         self.logging_manager = LoggingManager() 
         self.logger = self.logging_manager.create_logger(
@@ -277,22 +278,23 @@ def transform_historic_weather(
         return "Error: No message data found in the cloud event."
 
 @functions_framework.cloud_event
-def create_or_replace_historic_weather_unioned(
-    self,
+def bq_create_or_replace_historic_weather_unioned(
     cloud_event=None
     ):
-    print("do something...")
     bq_manager = BigQueryManager()
     config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
     
+    # Historic Weather
     bq_manager.create_or_replace_bq_table_from_gcs(
         project_name=config.gcp_project_name,
         source_bucket_name=config.bucket_name,
-        source_dir_path=self.config.wthr_historic_unioned_folderpath,
-        source_file_name=self.config.wthr_historic_unioned_filename,
-        target_dataset_name=self.config.bq_dataset_name,
-        target_table_name=self.config.bq_historic_table_name,
-        schema=_______
+        source_dir_path=config.wthr_historic_unioned_folderpath,
+        source_file_name=config.wthr_historic_unioned_filename,
+        target_dataset_name=config.bq_dataset_name,
+        target_table_name=config.bq_historic_table_name,
+        schema=config.bq_schemas_historic_weather
+        )
+
         )
     
 
@@ -302,4 +304,4 @@ if __name__ == '__main__':
     # main()
     # get_historic_weather()
     # transform_historic_weather()
-    #pubsub_main()
+    bq_create_or_replace_historic_weather_unioned()
