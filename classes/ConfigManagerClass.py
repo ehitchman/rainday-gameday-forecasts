@@ -2,6 +2,8 @@ import os
 import yaml
 import dotenv
 
+from schemas.bq_schemas import get_bq_schemas
+
 runtime_logger_level = 'DEBUG'
 
 class ConfigManager:
@@ -22,6 +24,7 @@ class ConfigManager:
         yaml_full_path = os.path.join(yaml_filepath, yaml_filename)
         self.load_yaml_config(yaml_full_path)
         self.set_env_variables()
+        self.set_other_variables()
 
     def load_yaml_config(self, yaml_full_path):
         with open(yaml_full_path, 'r') as file:
@@ -34,6 +37,14 @@ class ConfigManager:
             if os.path.exists(env_path):
                 dotenv.load_dotenv(env_path)
                 self.update_config_from_env()
+
+    def set_other_variables(self):
+        self.update_config_from_other()
+
+    def update_config_from_other(self):
+        self.bq_schemas = get_bq_schemas()
+        self.bq_schemas_historic_weather = self.bq_schemas['schema_historic_weather']
+        self.bq_schemas_historic_forecast = self.bq_schemas['schema_historic_forecast']
 
     def update_config_from_env(self):
         # # Load and set runtime parameters from environment variables set in .bat
@@ -67,6 +78,7 @@ class ConfigManager:
         self.wunderground_weatherhistory_filepath = yaml_config.get('wunderground_weatherhistory_filepath')
         self.wthr_historic_unioned_csvpath = yaml_config.get('wthr_historic_unioned_csvpath')
         self.wthr_historic_csvpath = yaml_config.get('wthr_historic_csvpath')
+        
         self.wthr_historic_unioned_folderpath = yaml_config.get('wthr_historic_unioned_folderpath')
         self.wthr_historic_unioned_filename = yaml_config.get('wthr_historic_unioned_filename')
 
@@ -83,4 +95,5 @@ def main():
 
 if __name__ == "__main__":
     print("Use config_manager.primary_logging_folder to test config managers presenece")
-    #config_manager = main()
+    config_manager = main()
+    config_manager.wthr_historic_unioned_filename
