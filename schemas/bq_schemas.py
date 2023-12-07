@@ -13,7 +13,7 @@ def get_bq_schemas():
     schema_historic_forecast = [
         bigquery.SchemaField("capture_date", "DATE"),
         bigquery.SchemaField("forecast_dateunix", "INTEGER"),
-        bigquery.SchemaField("forecast_datetime", "DATETIME"),
+        bigquery.SchemaField("forecast_datetime", "STRING"), #should prob be datetime
         bigquery.SchemaField("name", "STRING"),
         bigquery.SchemaField("rain_category", "STRING"),
         bigquery.SchemaField("rain_category_value", "INTEGER"),

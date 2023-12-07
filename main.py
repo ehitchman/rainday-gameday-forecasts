@@ -295,8 +295,23 @@ def bq_create_or_replace_historic_weather_unioned(
         schema=config.bq_schemas_historic_weather
         )
 
-        )
+@functions_framework.cloud_event
+def bq_create_or_replace_historic_forecasts_unioned(
+    cloud_event=None
+    ):
+    bq_manager = BigQueryManager()
+    config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
     
+    # Historic Forecasts
+    bq_manager.create_or_replace_bq_table_from_gcs(
+        project_name=config.gcp_project_name,
+        source_bucket_name=config.bucket_name,
+        source_dir_path=config.wthr_forecast_unioned_folderpath,
+        source_file_name=config.wthr_forecast_unioned_filename,
+        target_dataset_name=config.bq_dataset_name,
+        target_table_name=config.bq_forecast_table_name,
+        schema=config.bq_schemas_historic_forecast
+        )
 
 if __name__ == '__main__':
     print("Tests included in main.py, however only run these tests if you're certain you'd like to overwrite the forecast that may have been scheduled for first thing this morning")
@@ -304,4 +319,5 @@ if __name__ == '__main__':
     # main()
     # get_historic_weather()
     # transform_historic_weather()
-    bq_create_or_replace_historic_weather_unioned()
+    #bq_create_or_replace_historic_weather_unioned()
+    bq_create_or_replace_historic_forecasts_unioned()

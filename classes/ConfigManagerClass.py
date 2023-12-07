@@ -82,7 +82,9 @@ class ConfigManager:
         self.wthr_historic_unioned_folderpath = yaml_config.get('wthr_historic_unioned_folderpath')
         self.wthr_historic_unioned_filename = yaml_config.get('wthr_historic_unioned_filename')
 
-
+        self.wthr_forecast_unioned_folderpath = yaml_config.get('wthr_forecast_unioned_folderpath')
+        self.wthr_forecast_unioned_filename = yaml_config.get('wthr_forecast_unioned_filename')
+        
         #Users details: dict data type
         self.users_details = yaml_config.get('users_details', [])
 
