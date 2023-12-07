@@ -277,22 +277,23 @@ def transform_historic_weather(
         return "Error: No message data found in the cloud event."
 
 @functions_framework.cloud_event
-def create_or_replace_bq_table_from_gcs(
+def create_or_replace_historic_weather_unioned(
     self,
     cloud_event=None
     ):
     print("do something...")
     bq_manager = BigQueryManager()
-    config = ConfigManager()
+    config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
+    
     bq_manager.create_or_replace_bq_table_from_gcs(
         project_name=config.gcp_project_name,
         source_bucket_name=config.bucket_name,
-        source_dir_path=______,
-        source_file_name=______,
-        target_dataset_name=______,
-        target_table_name=______,
-        schema=
-    )
+        source_dir_path=self.config.wthr_historic_unioned_folderpath,
+        source_file_name=self.config.wthr_historic_unioned_filename,
+        target_dataset_name=self.config.bq_dataset_name,
+        target_table_name=self.config.bq_historic_table_name,
+        schema=_______
+        )
     
 
 if __name__ == '__main__':

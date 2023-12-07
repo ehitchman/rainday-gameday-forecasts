@@ -52,8 +52,13 @@ class ConfigManager:
             self.log_responses_directory = yaml_config.get('log_responses_directory', '/log/responses')
 
         self.gcp_project_name = yaml_config.get('gcp_project_name')
+
+        self.bq_dataset_name = yaml_config.get('bq_dataset_name')
+        self.bq_historic_table_name=yaml_config.get('bq_historic_table_name')
+        self.bq_forecast_table_name=yaml_config.get('bq_forecast_table_name')
+
         self.pubsub_project_id = yaml_config.get('pubsub_project_id') 
-        self.bucket_name = yaml_config.get('bucket_name', 'default_bucket_name')
+        self.bucket_name = yaml_config.get('bucket_name')
         self.gcs_credential_filepath = yaml_config.get('gcs_credential_filepath')
 
         self.response_file_name = yaml_config.get('response_file_name', 'response')
@@ -62,7 +67,10 @@ class ConfigManager:
         self.wunderground_weatherhistory_filepath = yaml_config.get('wunderground_weatherhistory_filepath')
         self.wthr_historic_unioned_csvpath = yaml_config.get('wthr_historic_unioned_csvpath')
         self.wthr_historic_csvpath = yaml_config.get('wthr_historic_csvpath')
-                
+        self.wthr_historic_unioned_folderpath = yaml_config.get('wthr_historic_unioned_folderpath')
+        self.wthr_historic_unioned_filename = yaml_config.get('wthr_historic_unioned_filename')
+
+
         #Users details: dict data type
         self.users_details = yaml_config.get('users_details', [])
 
