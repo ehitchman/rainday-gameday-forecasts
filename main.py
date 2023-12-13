@@ -151,6 +151,7 @@ class WeatherForecaster():
         # Coerce to pandas dattime object:
         unioned_forecasts['forecast_datetime'] = pd.to_datetime(unioned_forecasts['forecast_datetime'])
 
+        # Write to GCS
         self.gcs_manager.write_df_to_gcs(
             df=unioned_forecasts,
             bucket_name=bucket_name,
@@ -320,10 +321,13 @@ def bq_create_or_replace_historic_forecasts_unioned(
         )
 
 if __name__ == '__main__':
+    config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
+    weather_forecaster = WeatherForecaster()
     print("Tests included in main.py, however only run these tests if you're certain you'd like to overwrite the forecast that may have been scheduled for first thing this morning")
-    # config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
+    print(f"This is the project name: {config.gcp_project_name}")
     # main()
     # get_historic_weather()
     # transform_historic_weather()
     #bq_create_or_replace_historic_weather_unioned()
-    bq_create_or_replace_historic_forecasts_unioned()
+    #weather_forecaster.union_and_write_gcs_blob_forecasts_to_gcs()
+    #bq_create_or_replace_historic_forecasts_unioned()
