@@ -33,27 +33,6 @@ class GCSManager:
         self.logger.info('func list_gcs_blobs: finished')
         return blobs_list
 
-    # # Writes dataframe to specified bucket/path
-    # def write_df_to_gcs(self,
-    #                     df, 
-    #                     bucket_name = 'your_bucket_name', 
-    #                     gcs_bucket_filepath = 'your/buckjet/filepath.csv', 
-    #                     is_testing_run=False):
-
-    #     if is_testing_run == True:
-    #         df = pd.DataFrame(data=[[1,2,3],[4,5,6]],columns=['a','b','c'])
-    #         df.to_csv(file_object, index=False)
-        
-    #     bucket_object = self.gcs_client.get_bucket(bucket_name)
-    #     fileblob_object = bucket_object.blob(gcs_bucket_filepath)
-    #     file_object = io.StringIO()
-    #     file_object.seek(0)
-    #     fileblob_object.upload_from_string(file_object.read(), content_type="text/csv")
-    #     file_object.close()
-
-    #     message = f"func write_df_to_gcs: finished\n  -Wrote to {bucket_name} at location {gcs_bucket_filepath}"     
-    #     return(message)
-
     # Union blobs 
     def union_gcs_csv_blobs(
             self,
@@ -90,6 +69,34 @@ class GCSManager:
 
         self.logger.info('func union_gcs_csv_blobs: finished')
         return unioned_dfs
+
+    def download_all_files_in_gcs_folder(self, bucket_name, folder_path, destination_folder):
+        # Create the destination folder if it doesn't exist
+        if not os.path.exists(destination_folder):
+            os.makedirs(destination_folder)
+
+        # Get the bucket
+        bucket = self.gcs_client.bucket(bucket_name)
+
+        # List all blobs in the specified folder
+        blobs = bucket.list_blobs(prefix=folder_path)
+        self.logger.info("THIS IS THE BLOBS LIST")
+        self.logger.info(blobs)
+        # Download each file
+        for blob in blobs:
+            # Extract the file name from the blob name
+            file_name = blob.name.replace(folder_path, '')
+                    
+            # Skip if it's a directory placeholder (ends with '/')
+            if not file_name or file_name.endswith('/'):
+                continue
+
+            # Set the destination path
+            destination_path = os.path.join(destination_folder, file_name)
+
+            # Download the file
+            blob.download_to_filename(destination_path)
+            print(f"Downloaded {blob.name} to {destination_path}")
 
     #Creates big query table from GCS blob
     def create_bq_table_from_gcs(self,
@@ -199,7 +206,7 @@ class GCSManager:
         if 'a' != 'a':
             message = ''
         else:
-            message = f"Retrieved {self.config.gcs_bucketname} at location {gcs_bucket_blobdir} to dataframe" 
+            message = f"Retrieved {self.config.bucket_name} at location {gcs_bucket_blobdir} to dataframe" 
         print(message)
         return(df)
 
@@ -209,7 +216,7 @@ class GCSManager:
             gcs_bucket_blobpath='your/bucket/blobpath.xlsx',
             is_testing_run=False
             ):
-        bucket_object = self.gcs_client.get_bucket(self.config.gcs_bucketname)
+        bucket_object = self.gcs_client.get_bucket(self.config.bucket_name)
         print('TODO: incomplete, currently uploading manually')
         return()
 
@@ -237,7 +244,7 @@ class GCSManager:
         # upload from string and close file
         fileblob_object.upload_from_string(file_object.read(), content_type="text/csv")
         file_object.close()
-
+        
         #error checking
         if 'a' != 'a':
             message = ''
@@ -247,7 +254,7 @@ class GCSManager:
     
 def main():
     gcs_manager = GCSManager()
-    gcs_blobs_list = gcs_manager.list_gcs_blobs(gcs_bucketname='rainday-gameday-bucket')
+    gcs_blobs_list = gcs_manager.list_gcs_blobs(bucket_name='rainday-gameday-bucket')
     return gcs_blobs_list
 
 if __name__ == '__main__':

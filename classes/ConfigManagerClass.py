@@ -55,12 +55,15 @@ class ConfigManager:
         self.env_filedir = yaml_config.get('env_filedir', '')
         self.is_testing_run = yaml_config.get('is_testing_run', False)
 
+        #For downloads, update your cloud version of the folder
         if os.getenv('RAINDAY_IN_CLOUD_ENVIRONMENT')=='yes':
             self.primary_logging_folder = yaml_config.get('cloud_primary_logging_folder', '/tmp')
             self.log_responses_directory = yaml_config.get('cloud_log_responses_directory', '/tmp/responses')
+            self.primary_gcs_download_folder = yaml_config.get('cloud_gcs_download_folder')
         else:
             self.primary_logging_folder = yaml_config.get('primary_logging_folder', '/log')
             self.log_responses_directory = yaml_config.get('log_responses_directory', '/log/responses')
+            self.primary_gcs_download_folder = yaml_config.get('primary_gcs_download_folder')
 
         self.gcp_project_name = yaml_config.get('gcp_project_name')
 
@@ -74,6 +77,7 @@ class ConfigManager:
 
         self.response_file_name = yaml_config.get('response_file_name', 'response')
         self.wthr_forecast_csvpath = yaml_config.get('wthr_forecast_csvpath', '')
+        self.wthr_forecast_folderpath = yaml_config.get('wthr_forecast_folderpath', '')
         self.wthr_forecast_individual_csvpath = yaml_config.get('wthr_forecast_individual_csvpath', 'weather_forecast_csv/most_recent_individual_forecasts/5-day forecast')
         self.wunderground_weatherhistory_filepath = yaml_config.get('wunderground_weatherhistory_filepath')
         self.wthr_historic_unioned_csvpath = yaml_config.get('wthr_historic_unioned_csvpath')

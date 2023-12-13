@@ -132,19 +132,25 @@ class WeatherForecaster():
         # Get all historic daily CSV files from the bucket and union them together
         #  - directory should contain multiple files  
         blobs_list = self.gcs_manager.list_gcs_blobs(bucket_name=bucket_name)
+
         unioned_forecasts = self.gcs_manager.union_gcs_csv_blobs(
             blobs_list=blobs_list,
-            csvs_to_union_folder_location=self.config.wthr_forecast_csvpath
+            csvs_to_union_folder_location=self.config.wthr_forecast_folderpath
             )
 
         # Write the unioned forecasts to GCS. File will contain a row for every 
         # forecast_date_capture, forecast_time, user   
-        gcs_file_name = 'all_historic_forecasts.csv' 
-        gcs_forecasthistory_bucket_directory = self.config.forecast_unioned_csvpath
+        gcs_file_name = self.config.wthr_forecast_unioned_filename
+        wthr_forecast_unioned_folderpath = self.config.wthr_forecast_unioned_folderpath
+
         gcs_filepath = os.path.join(
-            gcs_forecasthistory_bucket_directory, 
+            wthr_forecast_unioned_folderpath, 
             gcs_file_name
             ).replace('\\', '/')
+  
+        # Coerce to pandas dattime object:
+        unioned_forecasts['forecast_datetime'] = pd.to_datetime(unioned_forecasts['forecast_datetime'])
+
         self.gcs_manager.write_df_to_gcs(
             df=unioned_forecasts,
             bucket_name=bucket_name,
