@@ -1,3 +1,4 @@
+#FORECASTS
 import openmeteo_requests
 
 import pandas as pd
@@ -6,6 +7,10 @@ from retry_requests import retry
 
 from classes.ConfigManagerClass import ConfigManager
 from classes.GCS import GCSManager
+
+from classes.LoggingClass import LoggingManager
+
+runtime_logger_level = 'DEBUG'
 
 class WeatherHistoryRetriever:
     def __init__(self):
