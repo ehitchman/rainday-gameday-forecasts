@@ -208,7 +208,7 @@ def get_historic_weather(request=None):
     except:
         outcome='failed'
 
-    # Create Pubsub message, create publisher, publsih topic data
+    # Create Pubsub message, create publisher, publish topic data
     data_json = {
             'status': outcome, 
             'timestamp': datetime.now().strftime("%d-%m-%Y, %H:%M:%S")
@@ -224,10 +224,6 @@ def transform_historic_weather(
     self,
     cloud_event=None
     ):
-    # Initialize configuration and Google Cloud Storage Manager
-    # config = ConfigManager(yaml_filepath='config', yaml_filename='config.yaml')
-    # gcs_manager = GCSManager()
-
     # Logging the paths for reference
     logger.info("Starting transform_historic_weather:")
     logger.info(f"The read path for unioning, config.wthr_historic_csvpath: {self.config.wthr_historic_csvpath}")
@@ -328,6 +324,6 @@ if __name__ == '__main__':
     # main()
     # get_historic_weather()
     # transform_historic_weather()
-    #bq_create_or_replace_historic_weather_unioned()
+    # bq_create_or_replace_historic_weather_unioned()
     #weather_forecaster.union_and_write_gcs_blob_forecasts_to_gcs()
     #bq_create_or_replace_historic_forecasts_unioned()

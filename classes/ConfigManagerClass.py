@@ -80,6 +80,7 @@ class ConfigManager:
         self.wthr_forecast_folderpath = yaml_config.get('wthr_forecast_folderpath', '')
         self.wthr_forecast_individual_csvpath = yaml_config.get('wthr_forecast_individual_csvpath', 'weather_forecast_csv/most_recent_individual_forecasts/5-day forecast')
         self.wunderground_weatherhistory_filepath = yaml_config.get('wunderground_weatherhistory_filepath')
+        self.wthr_historic_folderpath = yaml_config.get('wthr_historic_folderpath')
         self.wthr_historic_unioned_csvpath = yaml_config.get('wthr_historic_unioned_csvpath')
         self.wthr_historic_csvpath = yaml_config.get('wthr_historic_csvpath')
         

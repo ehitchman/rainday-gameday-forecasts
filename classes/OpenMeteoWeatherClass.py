@@ -32,6 +32,26 @@ class WeatherHistoryRetriever:
             debug_level=runtime_logger_level
         )
 
+    # def _fetch_hourly_data(self, latitude, longitude, start_date, end_date, name):
+    #     # Fetch the response
+    #     url = "https://archive-api.open-meteo.com/v1/archive"
+    #     params = {
+    #         "latitude": latitude,
+    #         "longitude": longitude,
+    #         "start_date": start_date,
+    #         "end_date": end_date,
+    #         "hourly": ["temperature_2m", "relative_humidity_2m", "apparent_temperature", "precipitation", "rain", "snowfall", "wind_speed_10m"]
+    #     }
+    #     responses = self.openmeteo.weather_api(url, params=params)
+
+    #     # Process the response
+    #     response = responses[0]
+    #     self.logger.info(responses[0])
+    #     hourly = response.Hourly(hourly)
+        
+    #     self.logger.info(hourly)
+    #     return hourly
+
     def fetch_and_process(self, latitude, longitude, start_date, end_date, name):
         # Fetch the response
         url = "https://archive-api.open-meteo.com/v1/archive"
