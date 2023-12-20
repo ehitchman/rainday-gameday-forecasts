@@ -11,6 +11,7 @@ from classes.GCS import GCSManager
 from classes.OpenWeatherMap import WeatherForecastRetriever
 from classes.OpenMeteoWeatherClass import WeatherHistoryRetriever
 from classes.PubSub import PubSubManager
+from classes.BigQueryManager import BigQueryManager
 
 #os.environ['RAINDAY_IN_CLOUD_ENVIRONMENT'] = 'yes'
 runtime_logger_level = 'DEBUG'
@@ -28,6 +29,7 @@ class WeatherForecaster():
         self.config = ConfigManager(yaml_filename = 'config.yaml', yaml_filepath = 'config')
         self.forecast_manager = WeatherForecastRetriever()
         self.gcs_manager = GCSManager()
+        self.bq_manager = BigQueryManager()
 
         self.logging_manager = LoggingManager() 
         self.logger = self.logging_manager.create_logger(
@@ -130,19 +132,26 @@ class WeatherForecaster():
         # Get all historic daily CSV files from the bucket and union them together
         #  - directory should contain multiple files  
         blobs_list = self.gcs_manager.list_gcs_blobs(bucket_name=bucket_name)
+
         unioned_forecasts = self.gcs_manager.union_gcs_csv_blobs(
             blobs_list=blobs_list,
-            csvs_to_union_folder_location=self.config.wthr_forecast_csvpath
+            csvs_to_union_folder_location=self.config.wthr_forecast_folderpath
             )
 
         # Write the unioned forecasts to GCS. File will contain a row for every 
         # forecast_date_capture, forecast_time, user   
-        gcs_file_name = 'all_historic_forecasts.csv' 
-        gcs_forecasthistory_bucket_directory = self.config.forecast_unioned_csvpath
+        gcs_file_name = self.config.wthr_forecast_unioned_filename
+        wthr_forecast_unioned_folderpath = self.config.wthr_forecast_unioned_folderpath
+
         gcs_filepath = os.path.join(
-            gcs_forecasthistory_bucket_directory, 
+            wthr_forecast_unioned_folderpath, 
             gcs_file_name
             ).replace('\\', '/')
+  
+        # Coerce to pandas dattime object:
+        unioned_forecasts['forecast_datetime'] = pd.to_datetime(unioned_forecasts['forecast_datetime'])
+
+        # Write to GCS
         self.gcs_manager.write_df_to_gcs(
             df=unioned_forecasts,
             bucket_name=bucket_name,
@@ -199,7 +208,7 @@ def get_historic_weather(request=None):
     except:
         outcome='failed'
 
-    # Create Pubsub message, create publisher, publsih topic data
+    # Create Pubsub message, create publisher, publish topic data
     data_json = {
             'status': outcome, 
             'timestamp': datetime.now().strftime("%d-%m-%Y, %H:%M:%S")
@@ -215,10 +224,6 @@ def transform_historic_weather(
     self,
     cloud_event=None
     ):
-    # Initialize configuration and Google Cloud Storage Manager
-    # config = ConfigManager(yaml_filepath='config', yaml_filename='config.yaml')
-    # gcs_manager = GCSManager()
-
     # Logging the paths for reference
     logger.info("Starting transform_historic_weather:")
     logger.info(f"The read path for unioning, config.wthr_historic_csvpath: {self.config.wthr_historic_csvpath}")
@@ -274,12 +279,51 @@ def transform_historic_weather(
         # Log and return an error if no message data is found
         logger.error("No message data found in the cloud event.")
         return "Error: No message data found in the cloud event."
+
+@functions_framework.cloud_event
+def bq_create_or_replace_historic_weather_unioned(
+    cloud_event=None
+    ):
+    bq_manager = BigQueryManager()
+    config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
     
+    # Historic Weather
+    bq_manager.create_or_replace_bq_table_from_gcs(
+        project_name=config.gcp_project_name,
+        source_bucket_name=config.bucket_name,
+        source_dir_path=config.wthr_historic_unioned_folderpath,
+        source_file_name=config.wthr_historic_unioned_filename,
+        target_dataset_name=config.bq_dataset_name,
+        target_table_name=config.bq_historic_table_name,
+        schema=config.bq_schemas_historic_weather
+        )
+
+@functions_framework.cloud_event
+def bq_create_or_replace_historic_forecasts_unioned(
+    cloud_event=None
+    ):
+    bq_manager = BigQueryManager()
+    config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
+    
+    # Historic Forecasts
+    bq_manager.create_or_replace_bq_table_from_gcs(
+        project_name=config.gcp_project_name,
+        source_bucket_name=config.bucket_name,
+        source_dir_path=config.wthr_forecast_unioned_folderpath,
+        source_file_name=config.wthr_forecast_unioned_filename,
+        target_dataset_name=config.bq_dataset_name,
+        target_table_name=config.bq_forecast_table_name,
+        schema=config.bq_schemas_historic_forecast
+        )
 
 if __name__ == '__main__':
+    config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
+    weather_forecaster = WeatherForecaster()
     print("Tests included in main.py, however only run these tests if you're certain you'd like to overwrite the forecast that may have been scheduled for first thing this morning")
-    # config = ConfigManager(yaml_filename='config.yaml', yaml_filepath='config')
+    print(f"This is the project name: {config.gcp_project_name}")
     # main()
     # get_historic_weather()
     # transform_historic_weather()
-    #pubsub_main()
+    # bq_create_or_replace_historic_weather_unioned()
+    #weather_forecaster.union_and_write_gcs_blob_forecasts_to_gcs()
+    #bq_create_or_replace_historic_forecasts_unioned()

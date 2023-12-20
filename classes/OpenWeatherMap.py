@@ -1,9 +1,11 @@
+#FORECASTS
 import os
 import requests
 import json
 from datetime import datetime
 import pandas as pd
 
+from schemas.bq_schemas import get_bq_schemas
 from classes.ConfigManagerClass import ConfigManager
 from classes.LoggingClass import LoggingManager
 
@@ -96,31 +98,35 @@ class WeatherForecastRetriever():
         with contained forecast data
         """
 
-        forecast_schema = [
-            'capture_date', 
-            'forecast_dateunix', 
-            'forecast_datetime',
-            'name', 
-            'rain_category', 
-            'rain_category_value', 
-            'temp', 
-            'temp_min', 
-            'temp_max', 
-            'temp_humidity', 
-            'weather_description'
-           ]
+        bq_forecast_schema = get_bq_schemas()['schema_historic_forecast']
+        forecast_field_names = [field.name for field in bq_forecast_schema]
+        forecast_arrays = {field.name: [] for field in bq_forecast_schema}
+
+        # forecast_schema = [
+        #     'capture_date', 
+        #     'forecast_dateunix', 
+        #     'forecast_datetime',
+        #     'name', 
+        #     'rain_category', 
+        #     'rain_category_value', 
+        #     'temp', 
+        #     'temp_min', 
+        #     'temp_max', 
+        #     'temp_humidity', 
+        #     'weather_description'
+        #    ]
         
-        capture_dates  = []
-        forecast_datesunix = []
-        forecast_datestime = []
-        forecast_usernames = []
-        forecast_wthr_rain_categories = []
-        forecast_wthr_rain_category_values = []
-        forecast_wthr_temps = []
-        forecast_wthr_temps_min = []
-        forecast_wthr_temps_max = []
-        forecast_wthr_temps_humidity = []
-        forecast_wthr_weather_descriptions = []
+        # capture_dates  = []
+        # forecast_datesunix = []
+        # forecast_datestime = []
+        # forecast_usernames = []
+        # forecast_wthr_rain_categories = []
+        # forecast_wthr_rain_category_values = []
+        # forecast_wthr_temps = []
+        # forecast_wthr_temps_min = []
+        # forecast_wthr_temps_max = []
+        # forecast_wthr_temps_humidity = []
+        # forecast_wthr_weather_descriptions = []
 
         self.logger.info("-------------------------")
         self.logger.info("-------------------------")
@@ -137,59 +143,60 @@ class WeatherForecastRetriever():
             #get date fields
             todays_date = datetime.today().strftime('%Y-%m-%d')
             capture_date= todays_date
-            capture_dates.append(capture_date)
+            forecast_arrays['capture_date'].append(capture_date)
 
             forecast_dateunix = json_user_forecast_list[i]['dt']
-            forecast_datesunix.append(forecast_dateunix)
+            forecast_arrays['forecast_dateunix'].append(forecast_dateunix)
 
-            forecast_datetime = datetime.utcfromtimestamp(forecast_dateunix).strftime('%Y-%m-%d %H:%M:%S')
-            forecast_datestime.append(forecast_datetime)
+            forecast_datetime = pd.to_datetime(forecast_dateunix, unit='s')
+            forecast_arrays['forecast_datetime'].append(forecast_datetime)
 
             forecast_username = json_user_forecast['user_name']
-            forecast_usernames.append(forecast_username)
+            forecast_arrays['name'].append(forecast_username)
 
             #get weather category and category value (1 = rain, 0 = no rain)
             if 'rain' in json_user_forecast_list[i]["weather"][0]['main'].lower():
-                forecast_wthr_rain_categories.append('rain')
-                forecast_wthr_rain_category_values.append('1')
+                forecast_arrays['rain_category'].append('rain')
+                forecast_arrays['rain_category_value'].append('1')
             else:
-                forecast_wthr_rain_categories.append('no rain')
-                forecast_wthr_rain_category_values.append('0')
+                forecast_arrays['rain_category'].append('no rain')
+                forecast_arrays['rain_category_value'].append('0')
 
             # Extract main weather details
             main_weather = singleuserssingleforecast['main']
-            forecast_wthr_temps.append(main_weather['temp'])
-            forecast_wthr_temps_min.append(main_weather['temp_min'])
-            forecast_wthr_temps_max.append(main_weather['temp_max'])
-            forecast_wthr_temps_humidity.append(main_weather['humidity'])
+            forecast_arrays['temp'].append(main_weather['temp'])
+            forecast_arrays['temp_min'].append(main_weather['temp_min'])
+            forecast_arrays['temp_max'].append(main_weather['temp_max'])
+            forecast_arrays['temp_humidity'].append(main_weather['humidity'])
 
             # Extract weather description (assuming only one weather condition per entry)
             weather_description = singleuserssingleforecast['weather'][0]['description']
-            forecast_wthr_weather_descriptions.append(weather_description)
+            forecast_arrays['weather_description'].append(weather_description)
 
-        # TODO this section seems outside of normal practice
-        # Add columns/arrays/series' to df.  TODO this will eventually be looped over 
-        # each of the usernames contained in the yaml config file
-        #https://stackoverflow.com/questions/30522724/take-multiple-lists-into-dataframe
-        self.logger.info("ZIPPING LISTS NOW..................")
-        zipped_lists = zip(
-            capture_dates, 
-            forecast_datesunix, 
-            forecast_datestime, 
-            forecast_usernames, 
-            forecast_wthr_rain_categories, 
-            forecast_wthr_rain_category_values,
-            forecast_wthr_temps,
-            forecast_wthr_temps_min,
-            forecast_wthr_temps_max,
-            forecast_wthr_temps_humidity,
-            forecast_wthr_weather_descriptions
-            )
+        # # TODO this section seems outside of normal practice
+        # # Add columns/arrays/series' to df.  TODO this will eventually be looped over 
+        # # each of the usernames contained in the yaml config file
+        # #https://stackoverflow.com/questions/30522724/take-multiple-lists-into-dataframe
+        # self.logger.info("ZIPPING LISTS NOW..................")
+        # zipped_lists = zip(
+        #     capture_dates, 
+        #     forecast_datesunix, 
+        #     forecast_datestime, 
+        #     forecast_usernames, 
+        #     forecast_wthr_rain_categories, 
+        #     forecast_wthr_rain_category_values,
+        #     forecast_wthr_temps,
+        #     forecast_wthr_temps_min,
+        #     forecast_wthr_temps_max,
+        #     forecast_wthr_temps_humidity,
+        #     forecast_wthr_weather_descriptions
+        #     )
         
-        list_of_zipped_lists = list(zipped_lists)
+        # list_of_zipped_lists = list(zipped_lists)
 
-        forecast_df = pd.DataFrame(list_of_zipped_lists, columns=forecast_schema)
-
+        # forecast_df = pd.DataFrame(list_of_zipped_lists, columns=forecast_field_names)
+        forecast_df = pd.DataFrame(forecast_arrays, columns=forecast_field_names)
+        
         return forecast_df
 
 if __name__ =="__main__":
@@ -202,6 +209,9 @@ if __name__ =="__main__":
         lon=-79.38,
         write_to_directory=True
     )
-    print(output)
+    print("output:")
+    print(output.head(5))
     df = owm.transformJsonForecast(output)
-    print(df)
+    print("df:")
+    print(df.dtypes)
+    print(df.head(5))
