@@ -3,6 +3,7 @@ from google.cloud.exceptions import NotFound
 
 def get_bq_schemas():
     schema_historic_weather = [
+        bigquery.SchemaField("weather_date", "DATE"),
         bigquery.SchemaField("forecast_datetime", "DATETIME"),
         bigquery.SchemaField("temp", "FLOAT"), 
         bigquery.SchemaField("temp_humidity", "FLOAT"),
